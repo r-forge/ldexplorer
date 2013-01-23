@@ -16,3 +16,15 @@
  * You should have received a copy of the GNU General Public License
  * along with LDExplorer.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+using namespace std;
+
+#include <Rinternals.h>
+
+extern "C" {
+
+	SEXP mig() {
+		return R_NilValue;
+	}
+
+}

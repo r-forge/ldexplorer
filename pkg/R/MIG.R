@@ -17,6 +17,6 @@
 # along with LDExplorer.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-mig <- function() {
+mig <- function(file_format, phase_file, legend_file, output_file, region, maf, ld_lower_ci, ld_upper_ci, ehr_upper_ci, ld_fraction, prune, window) {
 	
 }
