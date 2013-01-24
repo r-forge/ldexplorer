@@ -5,26 +5,26 @@
 	Function for the efficient whole-genome haplotype block partitioning.
 	Haplotype blocks are defined based on D' coefficient of linkage disequilibrium (Gabriel et al., 2002).
 }
-\usage{mig(file_format, phase_file, legend_file, output_file, region = NA, maf = 0.0, ci_method = "AV", ci_precision = 1000, ld_ci = c(0.7, 0.98), ehr_ci = 0.9, ld_fraction = 0.95, pruning_method = "MIG++", window = NA)}
+\usage{mig(phase_file, output_file, file_format = "VCF", legend_file = NULL, region = NULL, maf = 0.0, ci_method = "AV", ci_precision = 1000, ld_ci = c(0.7, 0.98), ehr_ci = 0.9, ld_fraction = 0.95, pruning_method = "MIG++", window = NULL)}
 \arguments{
-	\item{file_format}{
-		Format of input file(s) with phased genotypes. 
-		Supported formats are VCF and HAPMAP2.
-	}
 	\item{phase_file}{
 		Name of an input file with phased genotypes in VCF or HAPMAP2 format.
+	}
+	\item{output_file}{
+		Name of an output file with haplotype blocks.
+	}
+	\item{file_format}{
+		Format of input file(s) with phased genotypes. 
+		Supported formats are VCF (default) and HAPMAP2.
 	}
 	\item{legend_file}{
 		Name of an input file with base pair positions of markers.
 		Mandatory only when HAPMAP2 format is specified.
 	}
-	\item{output_file}{
-		Name of an output file with haplotype blocks.
-	}
 	\item{region}{
 		A chromosomal region to be partitioned.
 		Is a vector of two values that correspond to the start and end position in base pairs.
-		If NA (default), then the whole chromosome is partitioned.
+		If NULL (default), then the whole chromosome is partitioned.
 	}
 	\item{maf}{
 		A threshold for the minor allele frequency of SNPs.

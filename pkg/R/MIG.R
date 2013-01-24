@@ -17,6 +17,14 @@
 # along with LDExplorer.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-mig <- function(file_format, phase_file, legend_file, output_file, region = NA, maf = 0.0, ci_method = "AV", ci_precision = 1000, ld_ci = c(0.7, 0.98), ehr_ci = 0.9, ld_fraction = 0.95, pruning_method = "MIG++", window = NA) {
+mig <- function(phase_file, output_file, file_format = "VCF", legend_file = NULL, region = NULL, maf = 0.0, ci_method = "AV", ci_precision = 1000, ld_ci = c(0.7, 0.98), ehr_ci = 0.9, ld_fraction = 0.95, pruning_method = "MIG++", window = NULL) {
+	if (missing(phase_file)) {
+		stop("The 'phase_file' argument is missing.");
+	}
 	
+	if (missing(output_file)) {
+		stop("The 'output_file' argument is missing.");
+	}
+	
+	.Call("mig", phase_file, output_file, file_format, legend_file, region, maf, ci_method, ci_precision, ld_ci, ehr_ci, ld_fraction, pruning_method, window)
 }
