@@ -40,7 +40,7 @@
 	\item{ci_precision}{
 		Number of likelihood estimation points in WP method to compute confidence interval (CI) of |D'|.
 		The default is 1000, the minimum recommended is 100.
-		Higher number of likelihood estimation points improves the precision of CI, but degrades the runtime.
+		Higher number of likelihood estimation points improves the precision of CI values, but degrades the runtime.
 	}
 	\item{ld_ci}{
 		Thresholds for the lower bound (CL) and upper bound (CU) of the 90\% confidence interval (CI) of D'.
