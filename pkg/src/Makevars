@@ -41,9 +41,11 @@ endif
 endif	
 endif
 
-APPDIRS = 	exception
+APPDIRS = 	exception \
+			zlib
 
-APPLIBS = 	exception/*.o
+APPLIBS = 	exception/*.o \
+			zlib/*.o
 			
 .PHONY: all applibs
      
