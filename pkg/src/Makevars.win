@@ -41,9 +41,15 @@ endif
 endif	
 endif
 
-APPDIRS = 	exception
+APPDIRS = 	exception \
+			zlib \
+			reader \
+			writer
 
-APPLIBS = 	exception/*.o
+APPLIBS = 	exception/*.o \
+			zlib/*.o \
+			reader/*.o \
+			writer/*.o
 			
 .PHONY: all applibs
      

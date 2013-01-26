@@ -41,11 +41,17 @@ endif
 endif	
 endif
 
-APPDIRS = 	exception \
-			zlib
+APPDIRS = 	auxiliary \
+			exception \
+			zlib \
+			reader \
+			writer
 
-APPLIBS = 	exception/*.o \
-			zlib/*.o
+APPLIBS = 	auxiliary/*.o \
+			exception/*.o \
+			zlib/*.o \
+			reader/*.o \
+			writer/*.o
 			
 .PHONY: all applibs
      
