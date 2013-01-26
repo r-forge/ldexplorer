@@ -65,7 +65,7 @@ extern "C" {
 			if (!optional) {
 				error("%s is NULL.", name);
 			} else {
-				return numeric_limits<double>::quiet_NaN();;
+				return numeric_limits<double>::quiet_NaN();
 			}
 		}
 
@@ -95,6 +95,45 @@ extern "C" {
 		}
 
 		return c_value;
+	}
+
+	void validateDoubles(SEXP value, const char* name, double* c_value, unsigned int length, bool optional) {
+		if (isNull(value)) {
+			if (!optional) {
+				error("%s is NULL.", name);
+			} else {
+				return;
+			}
+		}
+
+		if (!isNumeric(value)) {
+			error("%s is not numeric.", name);
+		}
+
+		if (isLogical(value)) {
+			error("%s is logical.", name);
+		}
+
+		if (length(value) < (long int)length) {
+			error("%s contains less than %u value(s).", name, length);
+		}
+
+		if (length(value) > (long int)length) {
+			error("%s contains more than %u value(s).", name, length);
+		}
+
+		if (isInteger(value)) {
+			for (unsigned int i = 0; i < length; ++i) {
+				c_value[i] = (double)INTEGER(value)[i];
+			}
+		} else {
+			for (unsigned int i = 0; i < length; ++i) {
+				c_value[i] = REAL(value)[i];
+				if (isnan(c_value[i])) {
+					error("%s contains NA/NaN value(s).", name);
+				}
+			}
+		}
 	}
 
 	long int validateInteger(SEXP value, const char* name, bool optional) {
@@ -138,6 +177,48 @@ extern "C" {
 		return c_value_int;
 	}
 
+	void validateIntegers(SEXP value, const char* name, long int* c_value, unsigned int length, bool optional) {
+		double c_value_double = numeric_limits<double>::quiet_NaN();
+
+		if (isNull(value)) {
+			if (!optional) {
+				error("%s is NULL.", name);
+			} else {
+				return;
+			}
+		}
+
+		if (!isNumeric(value)) {
+			error("%s is not numeric.", name);
+		}
+
+		if (isLogical(value)) {
+			error("%s is logical.", name);
+		}
+
+		if (length(value) < (long int)length) {
+			error("%s contains less than %u value(s).", name, length);
+		}
+
+		if (length(value) > (long int)length) {
+			error("%s contains more than %u value(s).", name, length);
+		}
+
+		if (isInteger(value)) {
+			for (unsigned int i = 0; i < length; ++i) {
+				c_value[i] = (double)INTEGER(value)[i];
+			}
+		} else {
+			for (unsigned int i = 0; i < length; ++i) {
+				c_value_double = REAL(value)[i];
+				if (isnan(c_value_double)) {
+					error("%s contains NA/NaN value(s).", name);
+				}
+				c_value[i] = (long int)c_value_double;
+			}
+		}
+	}
+
 
 	SEXP mig(SEXP phase_file, SEXP output_file, SEXP file_format, SEXP legend_file,
 			SEXP region, SEXP maf, SEXP ci_method, SEXP ci_precision, SEXP ld_ci, SEXP ehr_ci, SEXP ld_fraction,
@@ -147,8 +228,7 @@ extern "C" {
 		const char* c_output_file = NULL;
 		const char* c_file_format = NULL;
 		const char* c_legend_file = NULL;
-		double* c_region_double = NULL;
-		long int c_region_int[2] = {0, numeric_limits<long int>::max()};
+		long int c_region[2] = {0, numeric_limits<long int>::max()};
 		double c_maf = 0.0;
 		const char* c_ci_method = NULL;
 		long int c_ci_precision = 0;
@@ -171,47 +251,15 @@ extern "C" {
 		c_legend_file = validateString(legend_file, "legend_file", true);
 
 //		Validate region argument
-		if (!isNull(region)) {
-			if(!isNumeric(region)) {
-				cout << "region is not numeric" << endl;
-			}
-
-			if (isLogical(region)) {
-				cout << "region is logical" << endl;
-			}
-
-			if (length(region) != 2) {
-				cout << "region must contain 2 values" << endl;
-			}
-
-			if (isInteger(region)) {
-				c_region_int[0] = (long int)INTEGER(region)[0];
-				c_region_int[1] = (long int)INTEGER(region)[1];
-			} else {
-				c_region_double = REAL(region);
-				if (isnan(c_region_double[0])) {
-					cout << "region start is nan" << endl;
-				}
-				if (isnan(c_region_double[1])) {
-					cout << "region end is nan" << endl;
-				}
-				c_region_int[0] = (long int)c_region_double[0];
-				c_region_int[1] = (long int)c_region_double[1];
-			}
-
-			if (c_region_int[0] < 0) {
-				cout << "start must be positive" << endl;
-			}
-
-			if (c_region_int[1] < 0) {
-				cout << "end must be positive" << endl;
-			}
-
-			if (c_region_int[0] >= c_region_int[1]) {
-				cout << "end must be strictly greater than end" << endl;
-			}
-
-			cout << c_region_int[0] << " " << c_region_int[1] << endl;
+		validateIntegers(region, "region", c_region, 2u, true);
+		if (c_region[0] < 0) {
+			cout << "start must be positive" << endl;
+		}
+		if (c_region[1] < 0) {
+			cout << "end must be positive" << endl;
+		}
+		if (c_region[0] >= c_region[1]) {
+			cout << "end must be strictly greater than end" << endl;
 		}
 
 //		Validate maf argument
@@ -230,36 +278,7 @@ extern "C" {
 		}
 
 //		Validate ld_ci argument
-		if (isNull(ld_ci)) {
-			cout << "ld_ci is null" << endl;
-		}
-
-		if (!isNumeric(ld_ci)) {
-			cout << "ld_ci is not numeric" << endl;
-		}
-
-		if (isLogical(ld_ci)) {
-			cout << "ld_ci is logical" << endl;
-		}
-
-		if (length(ld_ci) != 2) {
-			cout << "ld_ci must contain two values" << endl;
-		}
-
-		if (isInteger(ld_ci)) {
-			c_ld_ci[0] = (double)INTEGER(ld_ci)[0];
-			c_ld_ci[1] = (double)INTEGER(ld_ci)[1];
-		} else {
-			c_ld_ci[0] = REAL(ld_ci)[0];
-			if (isnan(c_ld_ci[0])) {
-				cout << "CL is nan" << endl;
-			}
-			c_ld_ci[1] = REAL(ld_ci)[1];
-			if (isnan(c_ld_ci[1])) {
-				cout << "CU is nan" << endl;
-			}
-		}
-
+		validateDoubles(ld_ci, "ld_ci", c_ld_ci, 2u, false);
 		if ((c_ld_ci[0] < 0.0) || (c_ld_ci[0] > 1.0)) {
 			cout << "CL must be in [0.0, 1.0]" << endl;
 		}
@@ -288,7 +307,7 @@ extern "C" {
 		c_pruning_method = validateString(pruning_method, c_pruning_method, false);
 
 //		Validate window argument
-		c_window = validateInteger(window, "window", false);
+		c_window = validateInteger(window, "window", true);
 		if (c_window <= 0) {
 			cout << "window must be greater than 0" << endl;
 		}
