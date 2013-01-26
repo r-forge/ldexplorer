@@ -45,13 +45,15 @@ APPDIRS = 	auxiliary \
 			exception \
 			zlib \
 			reader \
-			writer
+			writer \
+			db
 
 APPLIBS = 	auxiliary/*.o \
 			exception/*.o \
 			zlib/*.o \
 			reader/*.o \
-			writer/*.o
+			writer/*.o \
+			db/*.o
 			
 .PHONY: all applibs
      
