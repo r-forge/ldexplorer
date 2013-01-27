@@ -106,6 +106,7 @@ public:
 	void mask(double maf_threshold) throw (Exception);
 
 	unsigned int get_n_haplotypes();
+	unsigned int get_all_n_markers();
 	unsigned int get_n_markers();
 	const char* get_marker(unsigned int index);
 	unsigned int get_position(unsigned int index);

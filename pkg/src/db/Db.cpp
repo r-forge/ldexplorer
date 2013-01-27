@@ -1422,6 +1422,10 @@ unsigned int Db::get_n_haplotypes() {
 	return n_haplotypes;
 }
 
+unsigned int Db::get_all_n_markers() {
+	return all_n_markers;
+}
+
 unsigned int Db::get_n_markers() {
 	return n_markers;
 }

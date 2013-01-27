@@ -191,6 +191,7 @@ extern "C" {
 		const char* c_file_format = NULL;
 		const char* c_legend_file = NULL;
 		long int c_region[2] = {0, numeric_limits<long int>::max()};
+		bool is_region = false;
 		double c_maf = 0.0;
 		const char* c_ci_method = NULL;
 		long int c_ci_precision = 0;
@@ -217,6 +218,10 @@ extern "C" {
 //		Validate file_format argument
 		if (!isNull(file_format)) {
 			c_file_format = validateString(file_format, "file_format");
+			if ((auxiliary::strcmp_ignore_case(c_file_format, Db::VCF) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_file_format, Db::HAPMAP2) != 0)) {
+				error("The file format, specified in '%s' argument, must be '%s' or '%s'.", "file_format", Db::VCF, Db::HAPMAP2);
+			}
 		} else {
 			error("'%s' argument is NULL.", "file_format");
 		}
@@ -238,7 +243,7 @@ extern "C" {
 			if (c_region[0] >= c_region[1]) {
 				error("The region end position, specified in '%s' argument, must be strictly greater than the region start position.", "region");
 			}
-		} else {
+			is_region = true;
 		}
 
 //		Validate maf argument
@@ -324,14 +329,44 @@ extern "C" {
 			clock_t start_time = 0;
 			double execution_time = 0.0;
 
-//			Db db;
+			Db db;
 
 			Rprintf("Loading data...\n");
 			start_time = clock();
 
+			Rprintf("\tPhase file: %s\n", c_phase_file);
+			Rprintf("\tLegend file: %s\n", c_legend_file == NULL ? "NA" : c_legend_file);
+			Rprintf("\tRegion: ");
+			if (is_region) {
+				Rprintf("[%u, %u]\n", c_region[0], c_region[1]);
+			} else {
+				Rprintf("NA\n");
+			}
+			Rprintf("\tMAF filter: > %g\n", c_maf);
+
+			if (is_region) {
+				if (auxiliary::strcmp_ignore_case(c_file_format, Db::VCF) == 0) {
+					db.load_vcf(c_phase_file, c_region[0], c_region[1]);
+				} else if (auxiliary::strcmp_ignore_case(c_file_format, Db::HAPMAP2) == 0) {
+					db.load_hapmap2(c_legend_file, c_phase_file, c_region[0], c_region[1]);
+				}
+			} else {
+				if (auxiliary::strcmp_ignore_case(c_file_format, Db::VCF) == 0) {
+					db.load_vcf(c_phase_file);
+				} else if (auxiliary::strcmp_ignore_case(c_file_format, Db::HAPMAP2) == 0) {
+					db.load_hapmap2(c_legend_file, c_phase_file);
+				}
+			}
+
+			db.mask(c_maf);
+
+			Rprintf("\tAll SNPs: %u\n", db.get_all_n_markers());
+			Rprintf("\tFiltered SNPs: %u\n", db.get_n_markers());
+			Rprintf("\tHaplotypes: %u\n", db.get_n_haplotypes());
+			Rprintf("\tUsed memory (Mb): %.3g\n", db.get_memory_usage());
+
 			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
 			Rprintf("Done (%.3g sec)\n", execution_time);
-
 
 		} catch (Exception &e) {
 			error("%s", e.what());
