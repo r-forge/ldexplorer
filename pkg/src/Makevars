@@ -46,14 +46,16 @@ APPDIRS = 	auxiliary \
 			zlib \
 			reader \
 			writer \
-			db
+			db \
+			algorithms
 
 APPLIBS = 	auxiliary/*.o \
 			exception/*.o \
 			zlib/*.o \
 			reader/*.o \
 			writer/*.o \
-			db/*.o
+			db/*.o \
+			algorithms/*.o
 			
 .PHONY: all applibs
      

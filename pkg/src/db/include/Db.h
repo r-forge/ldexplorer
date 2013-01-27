@@ -114,12 +114,10 @@ public:
 
 	double get_memory_usage();
 
-	friend class AlgorithmCI;
-	friend class Bootstrap;
-	friend class Bayesian;
-	friend class MLE;
-	friend class Zapata;
-	friend class Gabriel;
+	friend class CI;
+	friend class CIWP;
+	friend class CIAV;
+	friend class Algorithm;
 };
 
 #endif
