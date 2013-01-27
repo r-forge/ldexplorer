@@ -20,6 +20,9 @@
 #include <iostream>
 #include <math.h>
 
+#include "db/include/Db.h"
+
+#include <R.h>
 #include <Rinternals.h>
 
 using namespace std;
@@ -315,6 +318,23 @@ extern "C" {
 				error("The window size, specified in '%s' argument, must be strictly greater than 0.", "window");
 			}
 		} else {
+		}
+
+		try {
+			clock_t start_time = 0;
+			double execution_time = 0.0;
+
+//			Db db;
+
+			Rprintf("Loading data...\n");
+			start_time = clock();
+
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+			Rprintf("Done (%.3g sec)\n", execution_time);
+
+
+		} catch (Exception &e) {
+			error("%s", e.what());
 		}
 
 		return R_NilValue;

@@ -17,6 +17,8 @@
 # along with LDExplorer.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+include $(R_MAKECONF)
+
 applib:	Reader.o TextReader.o GzipReader.o ReaderFactory.o
 
 clean:  

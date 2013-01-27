@@ -26,5 +26,5 @@ mig <- function(phase_file, output_file, file_format = "VCF", legend_file = NULL
 		stop("The 'output_file' argument is missing.");
 	}
 	
-	.Call("mig", phase_file, output_file, file_format, legend_file, region, maf, ci_method, ci_precision, ld_ci, ehr_ci, ld_fraction, pruning_method, window)
+	result <- .Call("mig", phase_file, output_file, file_format, legend_file, region, maf, ci_method, ci_precision, ld_ci, ehr_ci, ld_fraction, pruning_method, window)
 }

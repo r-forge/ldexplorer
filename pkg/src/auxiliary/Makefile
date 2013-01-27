@@ -17,6 +17,8 @@
 # along with LDExplorer.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+include $(R_MAKECONF)
+
 applib:	auxiliary.o
 
 clean:  

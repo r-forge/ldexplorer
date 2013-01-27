@@ -17,6 +17,8 @@
 # along with LDExplorer.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+include $(R_MAKECONF)
+
 applib:	Writer.o TextWriter.o GzipWriter.o WriterFactory.o
 
 clean:  

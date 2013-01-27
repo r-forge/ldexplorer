@@ -17,7 +17,7 @@
 # along with LDExplorer.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-PKG_LIBS = $(GWALIBS)
+PKG_LIBS = $(APPLIBS)
 
 PKG_CFLAGS =
 PKG_CPPFLAGS = 
