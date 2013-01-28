@@ -28,24 +28,26 @@ CIWP::CIWP(Db& db, unsigned int precision) throw (Exception) : CI(db),
 		tmp_n_observed_haplotype_ref_a_ref_b(0u), tmp_n_observed_haplotype_alt_a_alt_b(0u),
 		dmax(0.0) {
 
-	generated_dprime = (double*)malloc((generation_number + 1) * sizeof(double));
+	generated_dprime = (double*)malloc((generation_number + 1u) * sizeof(double));
 	if (generated_dprime == NULL) {
 		throw Exception(__FILE__, __LINE__, "Error in memory allocation");
 	}
 
-	for (unsigned int i = 0u; i <= generation_number; i++) {
+	for (unsigned int i = 0u; i <= generation_number; ++i) {
 		generated_dprime[i] = i / (double)generation_number;
 	}
 
-	posterior_dist = (double*)malloc((generation_number + 1) * sizeof(double));
+	posterior_dist = (double*)malloc((generation_number + 1u) * sizeof(double));
 	if (posterior_dist == NULL) {
 		throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
 	}
 
-	log_likelihood = (double*)malloc((generation_number + 1) * sizeof(double));
+	log_likelihood = (double*)malloc((generation_number + 1u) * sizeof(double));
 	if (log_likelihood == NULL) {
 		throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
 	}
+
+	cout << "WP CI computation method (precision = " << generation_number << ")." << endl;
 }
 
 CIWP::~CIWP() {
@@ -168,6 +170,4 @@ void CIWP::get_CI(unsigned int marker_a, unsigned int marker_b, double* dprime_l
 			break;
 		}
 	}
-
-//	cout << marker_a << "\t" << marker_b << "\t" << observed_d << "\t" << (observed_d / dmax) << "\t" << "[" << *dprime_lower_ci << ", " << *dprime_upper_ci << "]" << endl;
 }

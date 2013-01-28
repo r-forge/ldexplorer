@@ -20,8 +20,8 @@
 #include "include/CIFactory.h"
 
 const char* CIFactory::NONE = "NONE";
-const char* CIFactory::WP_CI = "WP";
-const char* CIFactory::AV_CI = "AV";
+const char* CIFactory::CI_WP = "WP";
+const char* CIFactory::CI_AV = "AV";
 
 CIFactory::CIFactory() {
 
@@ -34,9 +34,9 @@ CIFactory::~CIFactory() {
 CI* CIFactory::create(Db& db, const char* method, unsigned int precision) throw (Exception) {
 	if (auxiliary::strcmp_ignore_case(method, NONE) == 0) {
 		return new CI(db);
-	} else if (auxiliary::strcmp_ignore_case(method, WP_CI) == 0) {
+	} else if (auxiliary::strcmp_ignore_case(method, CI_WP) == 0) {
 		return new CIWP(db, precision);
-	} else if (auxiliary::strcmp_ignore_case(method, AV_CI) == 0) {
+	} else if (auxiliary::strcmp_ignore_case(method, CI_AV) == 0) {
 		return new CIAV(db);
 	} else {
 		throw Exception(__FILE__, __LINE__, "Unknown D' CI computation method '%s' was specified.", method);

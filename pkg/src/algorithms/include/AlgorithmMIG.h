@@ -30,7 +30,7 @@ public:
 	AlgorithmMIG(Db& db);
 	virtual ~AlgorithmMIG();
 
-	void compute_preliminary_blocks() throw (Exception);
+	void compute_preliminary_blocks(const char* ci_method, unsigned int ci_precision, unsigned int window) throw (Exception);
 };
 
 #endif

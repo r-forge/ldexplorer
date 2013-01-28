@@ -20,6 +20,8 @@
 #include <iostream>
 #include <math.h>
 
+#include "algorithms/include/CIFactory.h"
+#include "algorithms/include/AlgorithmFactory.h"
 #include "db/include/Db.h"
 
 #include <R.h>
@@ -201,21 +203,21 @@ extern "C" {
 		const char* c_pruning_method = NULL;
 		long int c_window = numeric_limits<long int>::max();
 
-//		Validate phase_file argument
+//		Validate phase_file argument.
 		if (!isNull(phase_file)) {
 			c_phase_file = validateString(phase_file, "phase_file");
 		} else {
 			error("'%s' argument is NULL.", "phase_file");
 		}
 
-//		Validate output_file argument
+//		Validate output_file argument.
 		if (!isNull(output_file)) {
 			c_output_file = validateString(output_file, "output_file");
 		} else {
 			error("'%s' argument is NULL.", "output_file");
 		}
 
-//		Validate file_format argument
+//		Validate file_format argument.
 		if (!isNull(file_format)) {
 			c_file_format = validateString(file_format, "file_format");
 			if ((auxiliary::strcmp_ignore_case(c_file_format, Db::VCF) != 0) &&
@@ -226,12 +228,12 @@ extern "C" {
 			error("'%s' argument is NULL.", "file_format");
 		}
 
-//		Validate legend_file argument
+//		Validate legend_file argument.
 		if (!isNull(legend_file)) {
 			c_legend_file = validateString(legend_file, "legend_file");
 		}
 
-//		Validate region argument
+//		Validate region argument.
 		if (!isNull(region)) {
 			validateIntegers(region, "region", c_region, 2u);
 			if (c_region[0] < 0) {
@@ -246,7 +248,7 @@ extern "C" {
 			is_region = true;
 		}
 
-//		Validate maf argument
+//		Validate maf argument.
 		if (!isNull(maf)) {
 			c_maf = validateDouble(maf, "maf");
 			if ((c_maf < 0.0) || (c_maf > 0.5)) {
@@ -256,24 +258,30 @@ extern "C" {
 			error("'%s' argument is NULL.", "maf");
 		}
 
-//		Validate ci_method argument
+//		Validate ci_method argument.
 		if (!isNull(ci_method)) {
 			c_ci_method = validateString(ci_method, "ci_method");
+			if ((auxiliary::strcmp_ignore_case(c_ci_method, CIFactory::CI_WP) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_ci_method, CIFactory::CI_AV) != 0)) {
+				error("The method to compute the confidence interval (CI) of D', specified in '%s' argument, must be '%s' or '%s'.", "file_format", CIFactory::CI_WP, CIFactory::CI_AV);
+			}
 		} else {
 			error("'%s' argument is NULL.", "ci_method");
 		}
 
-//		Validate ci_precision argument
-		if (!isNull(ci_precision)) {
-			c_ci_precision = validateInteger(ci_precision, "ci_precision");
-			if (c_ci_precision <= 0) {
-				error("The number of likelihood estimation points to compute confidence interval, specified in '%s' argument, must be strictly greater then 0.", "ci_precision");
+//		Validate ci_precision argument if WP method to compute D' CI was specified.
+		if (auxiliary::strcmp_ignore_case(c_ci_method, CIFactory::CI_WP) == 0) {
+			if (!isNull(ci_precision)) {
+				c_ci_precision = validateInteger(ci_precision, "ci_precision");
+				if (c_ci_precision <= 0) {
+					error("The number of likelihood estimation points to compute confidence interval, specified in '%s' argument, must be strictly greater then 0.", "ci_precision");
+				}
+			} else {
+				error("'%s' argument is NULL.", "ci_precision");
 			}
-		} else {
-			error("'%s' argument is NULL.", "ci_precision");
 		}
 
-//		Validate ld_ci argument
+//		Validate ld_ci argument.
 		if (!isNull(ld_ci)) {
 			validateDoubles(ld_ci, "ld_ci", c_ld_ci, 2u);
 			if ((c_ld_ci[0] < 0.0) || (c_ld_ci[0] > 1.0)) {
@@ -289,7 +297,7 @@ extern "C" {
 			error("'%s' argument is NULL.", "ld_ci");
 		}
 
-//		Validate ehr_ci argument
+//		Validate ehr_ci argument.
 		if (!isNull(ehr_ci)) {
 			c_ehr_ci = validateDouble(ehr_ci, "ehr_ci");
 			if ((c_ehr_ci < 0.0) || (c_ehr_ci > 1.0)) {
@@ -299,7 +307,7 @@ extern "C" {
 			error("'%s' argument is NULL.", "ehr_ci");
 		}
 
-//		Validate ld_fraction argument
+//		Validate ld_fraction argument.
 		if (!isNull(ld_fraction)) {
 			c_ld_fraction = validateDouble(ld_fraction, "ld_fraction");
 			if ((c_ld_fraction <= 0.0) || (c_ld_fraction > 1.0)) {
@@ -309,20 +317,28 @@ extern "C" {
 			error("'%s' argument is NULL.", "ld_fraction");
 		}
 
-//		Validate pruning_method argument
+//		Validate pruning_method argument.
 		if (!isNull(pruning_method)) {
 			c_pruning_method = validateString(pruning_method, "pruning_method");
+			if ((auxiliary::strcmp_ignore_case(c_pruning_method, AlgorithmFactory::ALGORITHM_MIG) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_pruning_method, AlgorithmFactory::ALGORITHM_MIGP) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_pruning_method, AlgorithmFactory::ALGORITHM_MIGPP) != 0)) {
+				error("The search space pruning method, specified in '%s' argument, must be '%s', '%s' or '%s'.",
+						"file_format", AlgorithmFactory::ALGORITHM_MIG, AlgorithmFactory::ALGORITHM_MIGP, AlgorithmFactory::ALGORITHM_MIGPP);
+			}
 		} else {
 			error("'%s' argument is NULL.", "pruning_method");
 		}
 
-//		Validate window argument
-		if (!isNull(window)) {
-			c_window = validateInteger(window, "window");
-			if (c_window <= 0) {
-				error("The window size, specified in '%s' argument, must be strictly greater than 0.", "window");
+//		Validate window argument if MIG++ search space pruning method was specified.
+		if (auxiliary::strcmp_ignore_case(c_pruning_method, AlgorithmFactory::ALGORITHM_MIGPP) == 0) {
+			if (!isNull(window)) {
+				c_window = validateInteger(window, "window");
+				if (c_window <= 0) {
+					error("The window size, specified in '%s' argument, must be strictly greater than 0.", "window");
+				}
+			} else {
 			}
-		} else {
 		}
 
 		try {
@@ -330,6 +346,7 @@ extern "C" {
 			double execution_time = 0.0;
 
 			Db db;
+			Algorithm* algorithm = NULL;
 
 			Rprintf("Loading data...\n");
 			start_time = clock();
@@ -364,6 +381,24 @@ extern "C" {
 			Rprintf("\tFiltered SNPs: %u\n", db.get_n_markers());
 			Rprintf("\tHaplotypes: %u\n", db.get_n_haplotypes());
 			Rprintf("\tUsed memory (Mb): %.3g\n", db.get_memory_usage());
+
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+			Rprintf("Done (%.3g sec)\n", execution_time);
+
+			Rprintf("Processing data...\n");
+			start_time = clock();
+
+			Rprintf("\tD' CI computation method: %s\n", c_ci_method);
+			Rprintf("\tD' CI precision: ");
+			if (auxiliary::strcmp_ignore_case(c_ci_method, CIFactory::CI_WP) == 0) {
+				Rprintf("%u\n", c_ci_precision);
+			} else {
+				Rprintf("NA\n");
+			}
+			Rprintf("\tPruning method: %s\n", c_pruning_method);
+
+			algorithm = AlgorithmFactory::create(db, c_pruning_method);
+			algorithm->compute_preliminary_blocks(c_ci_method, c_ci_precision, c_window);
 
 			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
 			Rprintf("Done (%.3g sec)\n", execution_time);

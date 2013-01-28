@@ -29,8 +29,8 @@
 class CIFactory {
 public:
 	static const char* NONE;
-	static const char* WP_CI;
-	static const char* AV_CI;
+	static const char* CI_WP;
+	static const char* CI_AV;
 
 	CIFactory();
 	virtual ~CIFactory();

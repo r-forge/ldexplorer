@@ -63,7 +63,7 @@ public:
 	Algorithm(Db& db) throw (Exception);
 	virtual ~Algorithm();
 
-	virtual void compute_preliminary_blocks() throw (Exception) = 0;
+	virtual void compute_preliminary_blocks(const char* ci_method, unsigned int ci_precision, unsigned int window) throw (Exception) = 0;
 
 	void sort_preliminary_blocks();
 	void select_final_blocks() throw (Exception);

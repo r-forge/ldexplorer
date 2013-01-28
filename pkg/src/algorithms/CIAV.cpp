@@ -25,6 +25,7 @@ CIAV::CIAV(Db& db) : CI(db),
 	f(0.0),
 	dprime(0.0), abs_dprime(0.0), var_dprime(0.0) {
 
+	cout << "AV CI computation method." << endl;
 }
 
 CIAV::~CIAV() {
@@ -127,6 +128,4 @@ void CIAV::get_CI(unsigned int marker_a, unsigned int marker_b, double* dprime_l
 	if (auxiliary::fcmp(*dprime_upper_ci, 1.0, EPSILON) > 0) {
 		*dprime_upper_ci = 1.0;
 	}
-
-//	cout << marker_a << "\t" << marker_b << "\t" << observed_d << "\t" << dprime << "\t" << "[" << *dprime_lower_ci << ", " << *dprime_upper_ci << "]" << endl;
 }

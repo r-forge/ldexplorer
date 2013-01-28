@@ -20,13 +20,17 @@
 #include "include/AlgorithmMIGP.h"
 
 AlgorithmMIGP::AlgorithmMIGP(Db& db) : Algorithm(db) {
-
+	cout << "MIG+ algorithm." << endl;
 }
 
 AlgorithmMIGP::~AlgorithmMIGP() {
 
 }
 
-void AlgorithmMIGP::compute_preliminary_blocks() throw (Exception) {
+void AlgorithmMIGP::compute_preliminary_blocks(const char* ci_method, unsigned int ci_precision, unsigned int window) throw (Exception) {
+	CI* ci = NULL;
 
+	ci = CIFactory::create(*db, ci_method, ci_precision);
+
+	cout << "MIG+ computations." << endl;
 }
