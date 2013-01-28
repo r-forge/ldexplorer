@@ -24,8 +24,6 @@ CIAV::CIAV(Db& db) : CI(db),
 	dmax_first(0.0), dmax_second(0.0), dmax(0.0),
 	f(0.0),
 	dprime(0.0), abs_dprime(0.0), var_dprime(0.0) {
-
-	cout << "AV CI computation method." << endl;
 }
 
 CIAV::~CIAV() {

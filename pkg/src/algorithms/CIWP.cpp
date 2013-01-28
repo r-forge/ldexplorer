@@ -46,8 +46,6 @@ CIWP::CIWP(Db& db, unsigned int precision) throw (Exception) : CI(db),
 	if (log_likelihood == NULL) {
 		throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
 	}
-
-	cout << "WP CI computation method (precision = " << generation_number << ")." << endl;
 }
 
 CIWP::~CIWP() {

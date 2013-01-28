@@ -52,7 +52,7 @@
 	\item{ehr_ci}{
 		A threshold for the upper bound (CU) of the 90\% confidence interval (CI) of D'.
 		If WP method to compute CI of |D'| was specified, then a SNP pair shows strong evidence of historical recombination (EHR) if CU <= ehr_upper_ci. 
-		If AV method to compute CI of D' was specified, then a SNP pair shows strong EHR if CU >= ehr_upper_ci.
+		If AV method to compute CI of D' was specified, then a SNP pair shows strong EHR if CL >= ehr_upper_ci and CU <= ehr_upper_ci.
 		By default, the threshold for the CU is 0.9 (Gabriel et al., 2002).
 	}
 	\item{ld_fraction}{

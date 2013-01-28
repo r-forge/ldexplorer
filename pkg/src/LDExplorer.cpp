@@ -202,6 +202,7 @@ extern "C" {
 		double c_ld_fraction = 0.0;
 		const char* c_pruning_method = NULL;
 		long int c_window = numeric_limits<long int>::max();
+		bool is_default_window = false;
 
 //		Validate phase_file argument.
 		if (!isNull(phase_file)) {
@@ -338,6 +339,7 @@ extern "C" {
 					error("The window size, specified in '%s' argument, must be strictly greater than 0.", "window");
 				}
 			} else {
+				is_default_window = true;
 			}
 		}
 
@@ -395,7 +397,20 @@ extern "C" {
 			} else {
 				Rprintf("NA\n");
 			}
+			Rprintf("\tD' CI lower bound for strong LD: >= %g\n", c_ld_ci[0]);
+			Rprintf("\tD' CI upper bound for strong LD: >= %g\n", c_ld_ci[1]);
+			Rprintf("\tD' CI upper bound for recombination: <= %g\n", c_ehr_ci);
+			Rprintf("\tFraction of strong LD SNP pairs: >= %g\n", c_ld_fraction);
 			Rprintf("\tPruning method: %s\n", c_pruning_method);
+			Rprintf("\tWindow: ");
+			if (auxiliary::strcmp_ignore_case(c_pruning_method, AlgorithmFactory::ALGORITHM_MIGPP) == 0) {
+				if (is_default_window) {
+					c_window = (long int)(((double)db.get_n_markers() * (1.0 - c_ld_fraction)) / 2.0);
+				}
+				Rprintf("%ld\n", c_window);
+			} else {
+				Rprintf("NA\n", c_window);
+			}
 
 			algorithm = AlgorithmFactory::create(db, c_pruning_method);
 			algorithm->compute_preliminary_blocks(c_ci_method, c_ci_precision, c_window);
