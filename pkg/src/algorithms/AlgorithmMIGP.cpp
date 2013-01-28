@@ -61,9 +61,9 @@ void AlgorithmMIGP::compute_preliminary_blocks(const char* ci_method, unsigned i
 		for (long int j = i - 1u; j >= breakpoint; --j) {
 			ci->get_CI(i, j, &lower_ci, &upper_ci);
 			if (!isnan(lower_ci) && !isnan(upper_ci)) {
-				if (((auxiliary::fcmp(lower_ci, 0.7, EPSILON) >= 0) && (auxiliary::fcmp(upper_ci, 0.98, EPSILON) >= 0)) ||
-						((auxiliary::fcmp(lower_ci, -0.98, EPSILON) <= 0) && (auxiliary::fcmp(upper_ci, -0.7, EPSILON) <= 0))) {
-					w_values_sum += 0.05;
+				if (((auxiliary::fcmp(lower_ci, pos_strong_pair_cl, EPSILON) >= 0) && (auxiliary::fcmp(upper_ci, pos_strong_pair_cu, EPSILON) >= 0)) ||
+						((auxiliary::fcmp(lower_ci, neg_strong_pair_cu, EPSILON) <= 0) && (auxiliary::fcmp(upper_ci, neg_strong_pair_cl, EPSILON) <= 0))) {
+					w_values_sum += strong_pair_weight;
 					w_values[j] += w_values_sum;
 					if (auxiliary::fcmp(w_values[j], 0.0, EPSILON) >= 0) {
 						if (n_strong_pairs >= strong_pairs_size) {
@@ -88,8 +88,8 @@ void AlgorithmMIGP::compute_preliminary_blocks(const char* ci_method, unsigned i
 
 						++n_strong_pairs;
 					}
-				} else if ((auxiliary::fcmp(lower_ci, -0.9, EPSILON) >= 0) && (auxiliary::fcmp(upper_ci, 0.9, EPSILON) <= 0)) {
-					w_values_sum -= 0.95;
+				} else if ((auxiliary::fcmp(lower_ci, neg_recomb_pair_cu, EPSILON) >= 0) && (auxiliary::fcmp(upper_ci, pos_recomb_pair_cu, EPSILON) <= 0)) {
+					w_values_sum -= recomb_pair_weight;
 					w_values[j] += w_values_sum;
 				} else {
 					w_values[j] += w_values_sum;
@@ -98,7 +98,7 @@ void AlgorithmMIGP::compute_preliminary_blocks(const char* ci_method, unsigned i
 				w_values[j] += w_values_sum;
 			}
 
-			w_value_max = w_values[j] + 0.025 * ((db->n_markers - i - 1u) * (db->n_markers + i - j - j));
+			w_value_max = w_values[j] + 0.5 * strong_pair_weight * ((db->n_markers - i - 1u) * (db->n_markers + i - j - j));
 			if (auxiliary::fcmp(w_value_max, 0.0, EPSILON) >= 0) {
 				updated_breakpoint = j;
 			}

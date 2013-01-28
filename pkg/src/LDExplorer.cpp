@@ -407,6 +407,9 @@ extern "C" {
 			if (auxiliary::strcmp_ignore_case(c_pruning_method, AlgorithmFactory::ALGORITHM_MIGPP) == 0) {
 				if (is_default_window) {
 					c_window = (long int)(((double)db.get_n_markers() * (1.0 - c_ld_fraction)) / 2.0);
+					if (c_window <= 0) {
+						c_window = 1;
+					}
 				}
 				Rprintf("%ld\n", c_window);
 			} else {
@@ -414,9 +417,17 @@ extern "C" {
 			}
 
 			algorithm = AlgorithmFactory::create(db, c_pruning_method);
+
+			algorithm->set_strong_pair_cl(c_ld_ci[0]);
+			algorithm->set_strong_pair_cu(c_ld_ci[1]);
+			algorithm->set_recomb_pair_cu(c_ehr_ci);
+			algorithm->set_strong_pairs_fraction(c_ld_fraction);
+
 			algorithm->compute_preliminary_blocks(c_ci_method, c_ci_precision, c_window);
 			algorithm->sort_preliminary_blocks();
 			algorithm->select_final_blocks();
+
+			algorithm->write_blocks(c_output_file, c_phase_file, c_legend_file, c_maf, is_region, c_region[0], c_region[1], c_ci_method);
 
 			Rprintf("\tPreliminary haplotype blocks: %u\n", algorithm->get_n_strong_pairs());
 			Rprintf("\tFinal haplotype blocks: %u\n", algorithm->get_n_blocks());

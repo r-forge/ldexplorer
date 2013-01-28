@@ -43,10 +43,22 @@ protected:
 		unsigned long int distance;
 	};
 
+	double pos_strong_pair_cl;
+	double neg_strong_pair_cl;
+	double pos_strong_pair_cu;
+	double neg_strong_pair_cu;
+	double pos_recomb_pair_cu;
+	double neg_recomb_pair_cu;
+	double strong_pairs_fraction;
+	double strong_pair_weight;
+	double recomb_pair_weight;
+
 	Db* db;
+
 	pair* strong_pairs;
 	unsigned int n_strong_pairs;
 	unsigned int strong_pairs_size;
+
 	unsigned int* blocks;
 	unsigned int n_blocks;
 	unsigned int blocks_size;
@@ -62,6 +74,11 @@ public:
 
 	Algorithm(Db& db) throw (Exception);
 	virtual ~Algorithm();
+
+	void set_strong_pair_cl(double ci_lower_bound);
+	void set_strong_pair_cu(double ci_upper_bound);
+	void set_recomb_pair_cu(double ci_upper_bound);
+	void set_strong_pairs_fraction(double fraction);
 
 	virtual void compute_preliminary_blocks(const char* ci_method, unsigned int ci_precision, unsigned int window) throw (Exception) = 0;
 

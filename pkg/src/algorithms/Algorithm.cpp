@@ -26,7 +26,12 @@ const unsigned int Algorithm::BLOCKS_SIZE_INCREMENT = 1000;
 
 const double Algorithm::EPSILON = 0.000000001;
 
-Algorithm::Algorithm(Db& db) throw (Exception) : db(&db),
+Algorithm::Algorithm(Db& db) throw (Exception) :
+		pos_strong_pair_cl(0.7), neg_strong_pair_cl(-0.7),
+		pos_strong_pair_cu(0.98), neg_strong_pair_cu(-0.98),
+		pos_recomb_pair_cu(0.9), neg_recomb_pair_cu(0.9),
+		strong_pairs_fraction(0.95), strong_pair_weight(0.05), recomb_pair_weight(0.95),
+		db(&db),
 		strong_pairs(NULL), n_strong_pairs(0u), strong_pairs_size(STRONG_PAIRS_SIZE_INIT),
 		blocks(NULL), n_blocks(0u), blocks_size(BLOCKS_SIZE_INIT) {
 
@@ -51,17 +56,25 @@ Algorithm::~Algorithm() {
 	blocks = NULL;
 }
 
-int Algorithm::paircmp(const void* first, const void* second) {
-	pair* first_pair = (pair*)first;
-	pair* second_pair = (pair*)second;
+void Algorithm::set_strong_pair_cl(double ci_lower_bound) {
+	pos_strong_pair_cl = ci_lower_bound;
+	neg_strong_pair_cl = -pos_strong_pair_cl;
+}
 
-	if (first_pair->distance > second_pair->distance) {
-		return -1;
-	} else if (first_pair->distance < second_pair->distance) {
-		return 1;
-	} else {
-		return first_pair->first - second_pair->first;
-	}
+void Algorithm::set_strong_pair_cu(double ci_upper_bound) {
+	pos_strong_pair_cu = ci_upper_bound;
+	neg_strong_pair_cu = -pos_strong_pair_cu;
+}
+
+void Algorithm::set_recomb_pair_cu(double ci_upper_bound) {
+	pos_recomb_pair_cu = ci_upper_bound;
+	neg_recomb_pair_cu = -pos_recomb_pair_cu;
+}
+
+void Algorithm::set_strong_pairs_fraction(double fraction) {
+	strong_pairs_fraction = fraction;
+	strong_pair_weight = 1.0 - strong_pairs_fraction;
+	recomb_pair_weight = strong_pairs_fraction;
 }
 
 void Algorithm::sort_preliminary_blocks() {
@@ -185,6 +198,32 @@ void Algorithm::write_blocks(const char* output_file_name,
 			delete writer;
 		}
 		throw;
+	}
+}
+
+
+
+double Algorithm::get_max_memory_usage() {
+	double memory_usage = 0.0;
+
+	memory_usage += (4u * db->n_markers * sizeof(long double)) / 1048576.0;
+	memory_usage += (2u * db->n_markers * sizeof(long int)) / 1048576.0;
+	memory_usage += (strong_pairs_size * sizeof(pair)) / 1048576.0;
+	memory_usage += (blocks_size * sizeof(unsigned int)) / 1048576.0;
+
+	return memory_usage;
+}
+
+int Algorithm::paircmp(const void* first, const void* second) {
+	pair* first_pair = (pair*)first;
+	pair* second_pair = (pair*)second;
+
+	if (first_pair->distance > second_pair->distance) {
+		return -1;
+	} else if (first_pair->distance < second_pair->distance) {
+		return 1;
+	} else {
+		return first_pair->first - second_pair->first;
 	}
 }
 
@@ -367,15 +406,4 @@ void Algorithm::get_block_diversity(unsigned int block_id, unsigned int* n_haps,
 
 		throw;
 	}
-}
-
-double Algorithm::get_max_memory_usage() {
-	double memory_usage = 0.0;
-
-	memory_usage += (4u * db->n_markers * sizeof(long double)) / 1048576.0;
-	memory_usage += (2u * db->n_markers * sizeof(long int)) / 1048576.0;
-	memory_usage += (strong_pairs_size * sizeof(pair)) / 1048576.0;
-	memory_usage += (blocks_size * sizeof(unsigned int)) / 1048576.0;
-
-	return memory_usage;
 }
