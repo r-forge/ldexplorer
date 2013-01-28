@@ -118,6 +118,9 @@ public:
 	friend class CIWP;
 	friend class CIAV;
 	friend class Algorithm;
+	friend class AlgorithmMIG;
+	friend class AlgorithmMIGP;
+	friend class AlgorithmMIGPP;
 };
 
 #endif

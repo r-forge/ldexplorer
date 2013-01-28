@@ -343,12 +343,13 @@ extern "C" {
 			}
 		}
 
+		Algorithm* algorithm = NULL;
+
 		try {
 			clock_t start_time = 0;
 			double execution_time = 0.0;
 
 			Db db;
-			Algorithm* algorithm = NULL;
 
 			Rprintf("Loading data...\n");
 			start_time = clock();
@@ -382,10 +383,10 @@ extern "C" {
 			Rprintf("\tAll SNPs: %u\n", db.get_all_n_markers());
 			Rprintf("\tFiltered SNPs: %u\n", db.get_n_markers());
 			Rprintf("\tHaplotypes: %u\n", db.get_n_haplotypes());
-			Rprintf("\tUsed memory (Mb): %.3g\n", db.get_memory_usage());
+			Rprintf("\tUsed memory (Mb): %.3f\n", db.get_memory_usage());
 
 			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
-			Rprintf("Done (%.3g sec)\n", execution_time);
+			Rprintf("Done (%.3f sec)\n", execution_time);
 
 			Rprintf("Processing data...\n");
 			start_time = clock();
@@ -414,11 +415,22 @@ extern "C" {
 
 			algorithm = AlgorithmFactory::create(db, c_pruning_method);
 			algorithm->compute_preliminary_blocks(c_ci_method, c_ci_precision, c_window);
+			algorithm->sort_preliminary_blocks();
+			algorithm->select_final_blocks();
+
+			Rprintf("\tPreliminary haplotype blocks: %u\n", algorithm->get_n_strong_pairs());
+			Rprintf("\tFinal haplotype blocks: %u\n", algorithm->get_n_blocks());
+
+			delete algorithm;
+			algorithm = NULL;
 
 			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
-			Rprintf("Done (%.3g sec)\n", execution_time);
+			Rprintf("Done (%.3f sec)\n", execution_time);
 
 		} catch (Exception &e) {
+			delete algorithm;
+			algorithm = NULL;
+
 			error("%s", e.what());
 		}
 
