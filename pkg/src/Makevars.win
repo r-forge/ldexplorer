@@ -1,5 +1,5 @@
 #
-# Copyright © 2013 Daniel Taliun and Cristian Pattaro. All rights reserved.
+# Copyright © 2013 Daniel Taliun, Johann Gamper and Cristian Pattaro. All rights reserved.
 #
 # This file is part of LDExplorer.
 #
