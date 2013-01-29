@@ -18,6 +18,7 @@
  */
 
 #include <iostream>
+#include <limits>
 #include <math.h>
 
 #include "algorithms/include/CIFactory.h"
