@@ -79,4 +79,38 @@
 \keyword{misc}
 \keyword{utilities}
 \keyword{package}
-\examples{}
+\examples{
+	\dontshow{
+	# change the workspace
+	currentWd <- getwd()
+	newWd <- paste(system.file(package="LDExplorer"), "doc", sep="/")
+	setwd(newWd)
+	}
+	
+	# load LDExplorer library
+	library(LDExplorer)
+	
+	# run mig() function on HapMap phase II data with default arguments: computationally fastest approach.
+	mig(
+		phase_file = "HapMapII_r22_CEU_chr20_31767872_33700401.phase.gz", 
+		output_file = "HapMapII_r22_CEU_chr20_31767872_33700401.blocks.txt", 
+		file_format = "HAPMAP2",
+		legend_file = "HapMapII_r22_CEU_chr20_31767872_33700401.legend.txt.gz"
+	)
+	
+	# show contents of the input script
+	file.show("HapMapII_r22_CEU_chr20_31767872_33700401.blocks.txt", title="HapMapII_r22_CEU_chr20_31767872_33700401.blocks.txt")
+	
+	\dontshow{
+	# restore previous workspace
+	setwd(currentWd)
+	}
+	
+	\dontshow{
+	# all input and output files are located in the subdirectory "doc" of the installed LDExplorer package
+	message <- c("\n", rep("#", 40), "\n")
+	message <- c(message, "\nAll input and output files of this example are located in directory:\n", newWd, "\n")
+	message <- c(message, "\n", rep("#", 40),"\n")
+	cat(message, sep="")
+	}
+}
