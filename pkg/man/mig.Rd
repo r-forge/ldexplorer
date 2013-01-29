@@ -90,7 +90,7 @@
 	# load LDExplorer library
 	library(LDExplorer)
 	
-	# run mig() function on HapMap phase II data with default arguments: computationally fastest approach.
+	# run mig() function on HapMap phase II CEU data with default arguments: computationally fastest approach.
 	mig(
 		phase_file = "HapMapII_r22_CEU_chr20_31767872_33700401.phase.gz", 
 		output_file = "HapMapII_r22_CEU_chr20_31767872_33700401.blocks.txt", 
@@ -100,6 +100,15 @@
 	
 	# show contents of the input script
 	file.show("HapMapII_r22_CEU_chr20_31767872_33700401.blocks.txt", title="HapMapII_r22_CEU_chr20_31767872_33700401.blocks.txt")
+	
+	# run mig() function on 1000 Genomes Project CEU data with default arguments: computationally fastest approach.
+	mig(
+		phase_file = "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.vcf.gz", 
+		output_file = "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks"
+	)
+	
+	# show contents of the input script
+	file.show("1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks", title="1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks")
 	
 	\dontshow{
 	# restore previous workspace
