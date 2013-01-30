@@ -20,6 +20,7 @@
 #include <iostream>
 #include <limits>
 #include <math.h>
+#include <time.h>
 
 #include "algorithms/include/CIFactory.h"
 #include "algorithms/include/AlgorithmFactory.h"
