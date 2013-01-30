@@ -111,3 +111,7 @@ void AlgorithmMIGP::compute_preliminary_blocks(const char* ci_method, unsigned i
 	free(w_values);
 	w_values = NULL;
 }
+
+double AlgorithmMIGP::get_memory_usage() {
+	return ((db->n_markers * sizeof(long double)) / 1048576.0);
+}

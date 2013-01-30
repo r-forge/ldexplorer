@@ -230,3 +230,12 @@ void AlgorithmMIGPP::compute_preliminary_blocks(const char* ci_method, unsigned 
 	free(breakpoints);
 	breakpoints = NULL;
 }
+
+double AlgorithmMIGPP::get_memory_usage() {
+	double memory_usage = 0.0;
+
+	memory_usage += (4u * db->n_markers * sizeof(long double)) / 1048576.0;
+	memory_usage += (2u * db->n_markers * sizeof(long int)) / 1048576.0;
+
+	return memory_usage;
+}

@@ -201,15 +201,24 @@ void Algorithm::write_blocks(const char* output_file_name,
 	}
 }
 
+double Algorithm::get_memory_usage_preliminary_blocks() {
+	return ((strong_pairs_size * sizeof(pair)) / 1048576.0);
+}
 
+double Algorithm::get_memory_usage_final_blocks() {
+	return ((blocks_size * sizeof(unsigned int)) / 1048576.0);
+}
 
-double Algorithm::get_max_memory_usage() {
+double Algorithm::get_memory_usage() {
+	return 0.0;
+}
+
+double Algorithm::get_total_memory_usage() {
 	double memory_usage = 0.0;
 
-	memory_usage += (4u * db->n_markers * sizeof(long double)) / 1048576.0;
-	memory_usage += (2u * db->n_markers * sizeof(long int)) / 1048576.0;
-	memory_usage += (strong_pairs_size * sizeof(pair)) / 1048576.0;
-	memory_usage += (blocks_size * sizeof(unsigned int)) / 1048576.0;
+	memory_usage += get_memory_usage_preliminary_blocks();
+	memory_usage += get_memory_usage_final_blocks();
+	memory_usage += get_memory_usage();
 
 	return memory_usage;
 }

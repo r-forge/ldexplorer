@@ -390,7 +390,7 @@ extern "C" {
 			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
 			Rprintf("Done (%.3f sec)\n", execution_time);
 
-			Rprintf("Processing data...\n");
+			Rprintf("Initializing algorithm...\n");
 			start_time = clock();
 
 			Rprintf("\tD' CI computation method: %s\n", c_ci_method);
@@ -425,20 +425,40 @@ extern "C" {
 			algorithm->set_recomb_pair_cu(c_ehr_ci);
 			algorithm->set_strong_pairs_fraction(c_ld_fraction);
 
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+			Rprintf("Done (%.3f sec)\n", execution_time);
+
+			Rprintf("Processing data...\n");
+			start_time = clock();
+
 			algorithm->compute_preliminary_blocks(c_ci_method, c_ci_precision, c_window);
+			Rprintf("\tPreliminary haplotype blocks: %u\n", algorithm->get_n_strong_pairs());
+
 			algorithm->sort_preliminary_blocks();
 			algorithm->select_final_blocks();
 
-			algorithm->write_blocks(c_output_file, c_phase_file, c_legend_file, c_maf, is_region, c_region[0], c_region[1], c_ci_method);
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
 
-			Rprintf("\tPreliminary haplotype blocks: %u\n", algorithm->get_n_strong_pairs());
 			Rprintf("\tFinal haplotype blocks: %u\n", algorithm->get_n_blocks());
 
-			delete algorithm;
-			algorithm = NULL;
+			Rprintf("\tMemory used for preliminary haplotype blocks (Mb): %.3g\n", algorithm->get_memory_usage_preliminary_blocks());
+			Rprintf("\tMemory used for final haplotype blocks (Mb): %.3g\n", algorithm->get_memory_usage_final_blocks());
+			Rprintf("\tMemory used by algorithm (Mb): %.3g\n", algorithm->get_memory_usage());
+			Rprintf("\tTotal used memory (Mb): %.3g\n", algorithm->get_total_memory_usage());
+			Rprintf("Done (%.3f sec)\n", execution_time);
+
+			Rprintf("Writing results...\n");
+			start_time = clock();
+
+			Rprintf("\tOutput file: %s\n", c_output_file);
+
+			algorithm->write_blocks(c_output_file, c_phase_file, c_legend_file, c_maf, is_region, c_region[0], c_region[1], c_ci_method);
 
 			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
 			Rprintf("Done (%.3f sec)\n", execution_time);
+
+			delete algorithm;
+			algorithm = NULL;
 
 		} catch (Exception &e) {
 			delete algorithm;

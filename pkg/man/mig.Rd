@@ -75,7 +75,12 @@
 		By default, the window is calculated on the fly based on the chromosome length and ld_fraction threshold.
 	}
 }
-\author{Daniel Taliun, Cristian Pattaro}
+\references{
+	Gabriel, Stacey B. et al. (2002) \emph{The Structure of Haplotype Blocks in the Human Genome}. Science, 296(5576), 2225-2229.
+	
+	J.C. Barrett et al. (2005) \emph{Haploview: analysis and visualization of LD and haplotype maps}. Bioinformatics, 21(2), 263-265.
+}
+\author{Daniel Taliun, Johann Gamper, Cristian Pattaro}
 \keyword{misc}
 \keyword{utilities}
 \keyword{package}

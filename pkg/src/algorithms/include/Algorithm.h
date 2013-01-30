@@ -91,7 +91,10 @@ public:
 	void write_blocks(const char* output_file_name, const char* input_phase_file_name, const char* input_map_file_name,
 			double maf_threshold, bool region, unsigned long int start, unsigned long int end, const char* ci_method) throw (Exception);
 
-	double get_max_memory_usage();
+	double get_memory_usage_preliminary_blocks();
+	double get_memory_usage_final_blocks();
+	virtual double get_memory_usage();
+	double get_total_memory_usage();
 };
 
 #endif

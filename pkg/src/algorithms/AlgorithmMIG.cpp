@@ -99,3 +99,7 @@ void AlgorithmMIG::compute_preliminary_blocks(const char* ci_method, unsigned in
 	free(w_values);
 	w_values = NULL;
 }
+
+double AlgorithmMIG::get_memory_usage() {
+	return ((db->n_markers * sizeof(long double)) / 1048576.0);
+}
