@@ -232,8 +232,12 @@ extern "C" {
 		}
 
 //		Validate legend_file argument.
-		if (!isNull(legend_file)) {
-			c_legend_file = validateString(legend_file, "legend_file");
+		if (auxiliary::strcmp_ignore_case(c_file_format, Db::HAPMAP2) == 0) {
+			if (!isNull(legend_file)) {
+				c_legend_file = validateString(legend_file, "legend_file");
+			} else {
+				error("'%s' argument is NULL.", "legend_file");
+			}
 		}
 
 //		Validate region argument.

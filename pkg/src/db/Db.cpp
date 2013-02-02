@@ -851,7 +851,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name, unsi
 			while ((token = auxiliary::strtok(&line, HAPMAP2_MAP_FIELD_SEPARATOR)) != NULL) {
 				if (total_column_number < HAPMAP2_MAP_MANDATORY_COLUMNS_SIZE) {
 					if (auxiliary::strcmp_ignore_case(token, hapmap2_map_mandatory_columns[total_column_number]) != 0) {
-						throw Exception(__FILE__, __LINE__, "Column '%s' is missing on position %d.", hapmap2_map_mandatory_columns[total_column_number], total_column_number + 1u);
+						throw Exception(__FILE__, __LINE__, "Column '%s' is missing on position %d in '%s' file.", hapmap2_map_mandatory_columns[total_column_number], total_column_number + 1u, map_file_name);
 					}
 				} else {
 					/* other columns */
@@ -861,7 +861,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name, unsi
 		}
 
 		if (line_length == 0) {
-			throw Exception(__FILE__, __LINE__, "The first HAPMAP2 legend file header line is empty.");
+			throw Exception(__FILE__, __LINE__, "The mandatory header line in '%s' HAPMAP2 legend file is empty.", map_file_name);
 		}
 
 		/* Read map data. */
@@ -883,29 +883,29 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name, unsi
 			}
 
 			if (column_number != total_column_number) {
-				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on %d line is not equal to the expected (%d).", column_number, line_number, total_column_number);
+				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on line %d in '%s' file is not equal to the expected (%d).", column_number, line_number, map_file_name, total_column_number);
 			}
 
 			if (!auxiliary::to_ulong_int(tokens[1u], &position)) {
-				throw Exception(__FILE__, __LINE__, "The chromosomal position '%s' on line %d could not be parsed to unsigned integer.", tokens[1u], line_number);
+				throw Exception(__FILE__, __LINE__, "The chromosomal position '%s' on line %d in '%s' file could not be parsed to unsigned integer.", tokens[1u], line_number, map_file_name);
 			}
 
 			if (strlen(tokens[2u]) == 1u) {
 				first_allele = toupper(tokens[2u][0u]);
 				if ((first_allele != 'A') && (first_allele != 'C') && (first_allele != 'G') && (first_allele != 'T')) {
-					throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d is incorrect.", tokens[2u], line_number);
+					throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d  in '%s' file is incorrect.", tokens[2u], line_number, map_file_name);
 				}
 			} else {
-				throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d is incorrect.", tokens[2u], line_number);
+				throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d in '%s' file is incorrect.", tokens[2u], line_number, map_file_name);
 			}
 
 			if (strlen(tokens[3u]) == 1u) {
 				second_allele = toupper(tokens[3u][0u]);
 				if ((second_allele != 'A') && (second_allele != 'C') && (second_allele != 'G') && (second_allele != 'T')) {
-					throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d is incorrect.", tokens[3u], line_number);
+					throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d in '%s' file is incorrect.", tokens[3u], line_number, map_file_name);
 				}
 			} else {
-				throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d is incorrect.", tokens[3u], line_number);
+				throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d in '%s' file is incorrect.", tokens[3u], line_number, map_file_name);
 			}
 
 			if (filter_n_markers >= current_filter_size) {
@@ -946,7 +946,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name, unsi
 		}
 
 		if (line_length == 0) {
-			throw Exception(__FILE__, __LINE__, "HAPMAP2 legend file line %d is empty.", line_number + 1u);
+			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, map_file_name);
 		}
 
 		reader->close();
@@ -954,7 +954,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name, unsi
 
 		free(tokens);
 	} catch (Exception &e) {
-		e.add_message(__FILE__, __LINE__, "Error while reading HAPMAP2 legend file.");
+		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", map_file_name);
 		throw;
 	}
 
@@ -1003,14 +1003,14 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name, unsi
 			}
 
 			if (column_number != filter_n_markers) {
-				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on %d line is not equal to the expected (%d).", column_number, line_number, filter_n_markers);
+				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on line %d in '%s' file is not equal to the expected (%d).", column_number, line_number, hap_file_name, filter_n_markers);
 			}
 
 			for (unsigned int i = 0u, j = 0u; i < filter_n_markers; ++i) {
 				if (strlen(tokens[i]) != 1u) {
-					throw Exception(__FILE__, __LINE__, "Sample on line %d has incorrect allele value '%s' for marker on position %d.", line_number, tokens[i], i + 1u);
+					throw Exception(__FILE__, __LINE__, "Sample on line %d in '%s' file has incorrect allele value '%s' for marker on position %d.", line_number, hap_file_name, tokens[i], i + 1u);
 				} else if ((tokens[i][0u] != '0') && (tokens[i][0u] != '1')) {
-					throw Exception(__FILE__, __LINE__, "Sample on line %d has unexpected allele value '%c' for marker on position %d.", line_number, tokens[i][0u], i + 1u);
+					throw Exception(__FILE__, __LINE__, "Sample on line %d in '%s' file has unexpected allele value '%c' for marker on position %d.", line_number, hap_file_name, tokens[i][0u], i + 1u);
 				}
 
 				if (filter[i] == 0u) {
@@ -1037,7 +1037,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name, unsi
 		}
 
 		if (line_length == 0) {
-			throw Exception(__FILE__, __LINE__, "HAPMAP2 haplotype file line %d is empty.", line_number + 1u);
+			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, hap_file_name);
 		}
 
 		reader->close();
@@ -1066,7 +1066,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name, unsi
 
 		mask(numeric_limits<double>::quiet_NaN());
 	} catch (Exception &e) {
-		e.add_message(__FILE__, __LINE__, "Error while reading HAPMAP2 haplotype file.");
+		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", hap_file_name);
 		throw;
 	}
 
@@ -1105,7 +1105,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name) thro
 			while ((token = auxiliary::strtok(&line, HAPMAP2_MAP_FIELD_SEPARATOR)) != NULL) {
 				if (total_column_number < HAPMAP2_MAP_MANDATORY_COLUMNS_SIZE) {
 					if (auxiliary::strcmp_ignore_case(token, hapmap2_map_mandatory_columns[total_column_number]) != 0) {
-						throw Exception(__FILE__, __LINE__, "Column '%s' is missing on position %d.", hapmap2_map_mandatory_columns[total_column_number], total_column_number + 1u);
+						throw Exception(__FILE__, __LINE__, "Column '%s' is missing on position %d in '%s' file.", hapmap2_map_mandatory_columns[total_column_number], total_column_number + 1u, map_file_name);
 					}
 				} else {
 					/* other columns */
@@ -1115,7 +1115,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name) thro
 		}
 
 		if (line_length == 0) {
-			throw Exception(__FILE__, __LINE__, "The first HAPMAP2 legend file header line is empty.");
+			throw Exception(__FILE__, __LINE__, "The mandatory header line in '%s' HAPMAP2 legend file is empty.", map_file_name);
 		}
 
 		/* Read data. */
@@ -1137,7 +1137,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name) thro
 			}
 
 			if (column_number != total_column_number) {
-				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on %d line is not equal to the expected (%d).", column_number, line_number, total_column_number);
+				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on line %d in '%s' file is not equal to the expected (%d).", column_number, line_number, map_file_name, total_column_number);
 			}
 
 			if (all_n_markers >= current_heap_size) {
@@ -1151,34 +1151,34 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name) thro
 			strcpy(all_markers[all_n_markers], tokens[0u]);
 
 			if (!auxiliary::to_ulong_int(tokens[1u], &(all_positions[all_n_markers]))) {
-				throw Exception(__FILE__, __LINE__, "The chromosomal position '%s' on line %d could not be parsed to unsigned integer.", tokens[1u], line_number);
+				throw Exception(__FILE__, __LINE__, "The chromosomal position '%s' on line %d in '%s' file could not be parsed to unsigned integer.", tokens[1u], line_number, map_file_name);
 			}
 
 			if (strlen(tokens[2u]) == 1u) {
 				all_major_alleles[all_n_markers] = toupper(tokens[2u][0u]);
 				if ((all_major_alleles[all_n_markers] != 'A') && (all_major_alleles[all_n_markers] != 'C') &&
 						(all_major_alleles[all_n_markers] != 'G') && (all_major_alleles[all_n_markers] != 'T')) {
-					throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d is incorrect.", tokens[2u], line_number);
+					throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d in '%s' file is incorrect.", tokens[2u], line_number, map_file_name);
 				}
 			} else {
-				throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d is incorrect.", tokens[2u], line_number);
+				throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d in '%s' file is incorrect.", tokens[2u], line_number, map_file_name);
 			}
 
 			if (strlen(tokens[3u]) == 1u) {
 				all_minor_alleles[all_n_markers] = toupper(tokens[3u][0u]);
 				if ((all_minor_alleles[all_n_markers] != 'A') && (all_minor_alleles[all_n_markers] != 'C') &&
 						(all_minor_alleles[all_n_markers] != 'G') && (all_minor_alleles[all_n_markers] != 'T')) {
-					throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d is incorrect.", tokens[3u], line_number);
+					throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d in '%s' file is incorrect.", tokens[3u], line_number, map_file_name);
 				}
 			} else {
-				throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d is incorrect.", tokens[3u], line_number);
+				throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d in '%s' file is incorrect.", tokens[3u], line_number, map_file_name);
 			}
 
 			++all_n_markers;
 		}
 
 		if (line_length == 0) {
-			throw Exception(__FILE__, __LINE__, "HAPMAP2 legend file line %d is empty.", line_number + 1u);
+			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, map_file_name);
 		}
 
 		reader->close();
@@ -1186,7 +1186,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name) thro
 
 		free(tokens);
 	} catch (Exception &e) {
-		e.add_message(__FILE__, __LINE__, "Error while reading HAPMAP2 legend file.");
+		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", map_file_name);
 		throw;
 	}
 
@@ -1235,7 +1235,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name) thro
 			}
 
 			if (column_number != all_n_markers) {
-				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on %d line is not equal to the expected (%d).", column_number, line_number, all_n_markers);
+				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on line %d in '%s' file is not equal to the expected (%d).", column_number, line_number, hap_file_name, all_n_markers);
 			}
 
 			for (unsigned int i = 0u; i < all_n_markers; ++i) {
@@ -1247,7 +1247,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name) thro
 				extended_haplotype = NULL;
 
 				if (strlen(tokens[i]) != 1u) {
-					throw Exception(__FILE__, __LINE__, "Sample on line %d has incorrect allele value '%s' for marker on position %d.", line_number, tokens[i], i + 1u);
+					throw Exception(__FILE__, __LINE__, "Sample on line %d in '%s' file has incorrect allele value '%s' for marker on position %d.", line_number, hap_file_name, tokens[i], i + 1u);
 				} else if (tokens[i][0u] == '0') {
 					++n_first_alleles[i];
 					all_haplotypes[i][n_haplotypes] = all_major_alleles[i];
@@ -1255,7 +1255,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name) thro
 					++n_second_alleles[i];
 					all_haplotypes[i][n_haplotypes] = all_minor_alleles[i];
 				} else {
-					throw Exception(__FILE__, __LINE__, "Sample on line %d has unexpected allele value '%c' for marker on position %d.", line_number, tokens[i][0u], i + 1u);
+					throw Exception(__FILE__, __LINE__, "Sample on line %d in '%s' file has unexpected allele value '%c' for marker on position %d.", line_number, hap_file_name, tokens[i][0u], i + 1u);
 				}
 			}
 
@@ -1263,7 +1263,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name) thro
 		}
 
 		if (line_length == 0) {
-			throw Exception(__FILE__, __LINE__, "HAPMAP2 haplotype file line %d is empty.", line_number + 1u);
+			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, hap_file_name);
 		}
 
 		reader->close();
@@ -1292,7 +1292,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name) thro
 
 		mask(numeric_limits<double>::quiet_NaN());
 	} catch (Exception &e) {
-		e.add_message(__FILE__, __LINE__, "Error while reading HAPMAP2 haplotype file.");
+		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", hap_file_name);
 		throw;
 	}
 }
