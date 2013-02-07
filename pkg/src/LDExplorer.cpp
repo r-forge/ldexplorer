@@ -186,19 +186,19 @@ extern "C" {
 		}
 	}
 
-	SEXP mig(SEXP phase_file, SEXP output_file, SEXP file_format, SEXP legend_file,
-			SEXP region, SEXP maf, SEXP ci_method, SEXP ci_precision, SEXP ld_ci, SEXP ehr_ci, SEXP ld_fraction,
+	SEXP mig(SEXP phase_file, SEXP output_file, SEXP phase_file_format, SEXP map_file,
+			SEXP region, SEXP maf, SEXP ci_method, SEXP l_density, SEXP ld_ci, SEXP ehr_ci, SEXP ld_fraction,
 			SEXP pruning_method, SEXP window) {
 
 		const char* c_phase_file = NULL;
 		const char* c_output_file = NULL;
-		const char* c_file_format = NULL;
-		const char* c_legend_file = NULL;
+		const char* c_phase_file_format = NULL;
+		const char* c_map_file = NULL;
 		long int c_region[2] = {0, numeric_limits<long int>::max()};
 		bool is_region = false;
 		double c_maf = 0.0;
 		const char* c_ci_method = NULL;
-		long int c_ci_precision = 0;
+		long int c_l_density = 0;
 		double c_ld_ci[] = {0.0, 0.0};
 		double c_ehr_ci = 0.0;
 		double c_ld_fraction = 0.0;
@@ -221,22 +221,22 @@ extern "C" {
 		}
 
 //		Validate file_format argument.
-		if (!isNull(file_format)) {
-			c_file_format = validateString(file_format, "file_format");
-			if ((auxiliary::strcmp_ignore_case(c_file_format, Db::VCF) != 0) &&
-					(auxiliary::strcmp_ignore_case(c_file_format, Db::HAPMAP2) != 0)) {
-				error("The file format, specified in '%s' argument, must be '%s' or '%s'.", "file_format", Db::VCF, Db::HAPMAP2);
+		if (!isNull(phase_file_format)) {
+			c_phase_file_format = validateString(phase_file_format, "file_format");
+			if ((auxiliary::strcmp_ignore_case(c_phase_file_format, Db::VCF) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_phase_file_format, Db::HAPMAP2) != 0)) {
+				error("The file format, specified in '%s' argument, must be '%s' or '%s'.", "phase_file_format", Db::VCF, Db::HAPMAP2);
 			}
 		} else {
-			error("'%s' argument is NULL.", "file_format");
+			error("'%s' argument is NULL.", "phase_file_format");
 		}
 
 //		Validate legend_file argument.
-		if (auxiliary::strcmp_ignore_case(c_file_format, Db::HAPMAP2) == 0) {
-			if (!isNull(legend_file)) {
-				c_legend_file = validateString(legend_file, "legend_file");
+		if (auxiliary::strcmp_ignore_case(c_phase_file_format, Db::HAPMAP2) == 0) {
+			if (!isNull(map_file)) {
+				c_map_file = validateString(map_file, "map_file");
 			} else {
-				error("'%s' argument is NULL.", "legend_file");
+				error("'%s' argument is NULL.", "map_file");
 			}
 		}
 
@@ -278,13 +278,13 @@ extern "C" {
 
 //		Validate ci_precision argument if WP method to compute D' CI was specified.
 		if (auxiliary::strcmp_ignore_case(c_ci_method, CIFactory::CI_WP) == 0) {
-			if (!isNull(ci_precision)) {
-				c_ci_precision = validateInteger(ci_precision, "ci_precision");
-				if (c_ci_precision <= 0) {
-					error("The number of likelihood estimation points to compute confidence interval, specified in '%s' argument, must be strictly greater then 0.", "ci_precision");
+			if (!isNull(l_density)) {
+				c_l_density = validateInteger(l_density, "ci_precision");
+				if (c_l_density <= 0) {
+					error("The number of likelihood estimation points to compute confidence interval, specified in '%s' argument, must be strictly greater then 0.", "l_density");
 				}
 			} else {
-				error("'%s' argument is NULL.", "ci_precision");
+				error("'%s' argument is NULL.", "l_density");
 			}
 		}
 
@@ -361,7 +361,7 @@ extern "C" {
 			start_time = clock();
 
 			Rprintf("\tPhase file: %s\n", c_phase_file);
-			Rprintf("\tLegend file: %s\n", c_legend_file == NULL ? "NA" : c_legend_file);
+			Rprintf("\tMap file: %s\n", c_map_file == NULL ? "NA" : c_map_file);
 			Rprintf("\tRegion: ");
 			if (is_region) {
 				Rprintf("[%u, %u]\n", c_region[0], c_region[1]);
@@ -371,16 +371,16 @@ extern "C" {
 			Rprintf("\tMAF filter: > %g\n", c_maf);
 
 			if (is_region) {
-				if (auxiliary::strcmp_ignore_case(c_file_format, Db::VCF) == 0) {
+				if (auxiliary::strcmp_ignore_case(c_phase_file_format, Db::VCF) == 0) {
 					db.load_vcf(c_phase_file, c_region[0], c_region[1]);
-				} else if (auxiliary::strcmp_ignore_case(c_file_format, Db::HAPMAP2) == 0) {
-					db.load_hapmap2(c_legend_file, c_phase_file, c_region[0], c_region[1]);
+				} else if (auxiliary::strcmp_ignore_case(c_phase_file_format, Db::HAPMAP2) == 0) {
+					db.load_hapmap2(c_map_file, c_phase_file, c_region[0], c_region[1]);
 				}
 			} else {
-				if (auxiliary::strcmp_ignore_case(c_file_format, Db::VCF) == 0) {
+				if (auxiliary::strcmp_ignore_case(c_phase_file_format, Db::VCF) == 0) {
 					db.load_vcf(c_phase_file);
-				} else if (auxiliary::strcmp_ignore_case(c_file_format, Db::HAPMAP2) == 0) {
-					db.load_hapmap2(c_legend_file, c_phase_file);
+				} else if (auxiliary::strcmp_ignore_case(c_phase_file_format, Db::HAPMAP2) == 0) {
+					db.load_hapmap2(c_map_file, c_phase_file);
 				}
 			}
 
@@ -398,9 +398,9 @@ extern "C" {
 			start_time = clock();
 
 			Rprintf("\tD' CI computation method: %s\n", c_ci_method);
-			Rprintf("\tD' CI precision: ");
+			Rprintf("\tD' likelihood density: ");
 			if (auxiliary::strcmp_ignore_case(c_ci_method, CIFactory::CI_WP) == 0) {
-				Rprintf("%u\n", c_ci_precision);
+				Rprintf("%u\n", c_l_density);
 			} else {
 				Rprintf("NA\n");
 			}
@@ -435,7 +435,7 @@ extern "C" {
 			Rprintf("Processing data...\n");
 			start_time = clock();
 
-			algorithm->compute_preliminary_blocks(c_ci_method, c_ci_precision, c_window);
+			algorithm->compute_preliminary_blocks(c_ci_method, c_l_density, c_window);
 			Rprintf("\tPreliminary haplotype blocks: %u\n", algorithm->get_n_strong_pairs());
 
 			algorithm->sort_preliminary_blocks();
@@ -456,7 +456,7 @@ extern "C" {
 
 			Rprintf("\tOutput file: %s\n", c_output_file);
 
-			algorithm->write_blocks(c_output_file, c_phase_file, c_legend_file, c_maf, is_region, c_region[0], c_region[1], c_ci_method);
+			algorithm->write_blocks(c_output_file, c_phase_file, c_map_file, c_maf, is_region, c_region[0], c_region[1], c_ci_method);
 
 			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
 			Rprintf("Done (%.3f sec)\n", execution_time);

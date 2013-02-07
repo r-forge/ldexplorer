@@ -5,68 +5,54 @@
 	Function for the efficient whole-genome haplotype block partitioning.
 	Haplotype blocks are defined based on D' coefficient of linkage disequilibrium (Gabriel et al., 2002).
 }
-\usage{mig(phase_file, output_file, file_format = "VCF", legend_file = NULL, region = NULL, maf = 0.0, ci_method = "AV", ci_precision = 1000, ld_ci = c(0.7, 0.98), ehr_ci = 0.9, ld_fraction = 0.95, pruning_method = "MIG++", window = NULL)}
+\usage{mig(phase_file, output_file, phase_file_format = "VCF", map_file = NULL, region = NULL, maf = 0.0, ci_method = "WP", l_density = 100, ld_ci = c(0.7, 0.98), ehr_ci = 0.9, ld_fraction = 0.95, pruning_method = "MIG++", window = NULL)}
 \arguments{
 	\item{phase_file}{
-		Name of an input file with phased genotypes in VCF or HAPMAP2 format.
+		Name of the input file with phased genotypes in VCF or HAPMAP2 format.
 	}
 	\item{output_file}{
-		Name of an output file with haplotype blocks.
+		Name of the output file where to store the haplotype blocks.
 	}
-	\item{file_format}{
-		Format of input file(s) with phased genotypes. 
-		Supported formats are VCF (default) and HAPMAP2.
+	\item{phase_file_format}{
+		Format of the phase_file: VCF (default) or HAPMAP2.
 	}
-	\item{legend_file}{
-		Name of an input file with base pair positions of markers.
-		Mandatory only when HAPMAP2 format is specified.
+	\item{map_file}{
+		Name of the map file with base-pair positions of each SNP.
+		Mandatory when file_format = HAPMAP2.
 	}
 	\item{region}{
-		A chromosomal region to be partitioned.
-		Is a vector of two values that correspond to the start and end position in base pairs.
-		If NULL (default), then the whole chromosome is partitioned.
+		Numeric vector with start and end positions (in base-pairs) of the chromosomal region to be partitioned.
+		If NULL (default), then the whole chromosome is processed.
 	}
 	\item{maf}{
-		A threshold for the minor allele frequency of SNPs.
-		It varies from 0 (default) to 0.5.
-		SNPs with lower (<=) minor allele frequency than the specified threshold are not considered.
+		Minor Allele Frequency (MAF) threshold: SNPs with MAF <= maf will not be considered.
+		The threshold may vary from 0 (default) to 0.5.
 	}
 	\item{ci_method}{
-		Name of a method to compute the confidence interval (CI) of D' between a SNP pair.
-		Supported methods are WP and AV (default).
-		The WP method computes CI of |D'| and is based on the work of Wall and Pitchard (2003) and the Haploview (Barrett et al., 2005) implementation.
-		The AV method computes CI of D' using the approximate variance estimator of D' (Zapata, 1997).
+		Confidence interval (CI) estimation method.
+		Supported methods are WP (default) = Wall and Pitchard (2003) method; AV = approximate variance estimator by Zapata et al (1997).
 	}
-	\item{ci_precision}{
-		Number of likelihood estimation points in WP method to compute confidence interval (CI) of |D'|.
-		The default is 1000, the minimum recommended is 100.
-		Higher number of likelihood estimation points improves the precision of CI values, but degrades the runtime.
+	\item{l_density}{
+		Number of points at which to evaluate the likelihood (applies only to the WP method). 
+		Default is 100. 
+		The higher the number the longer the runtime. 
+		The lower the number the lower the precision.
 	}
 	\item{ld_ci}{
-		Thresholds for the lower bound (CL) and upper bound (CU) of the 90\% confidence interval (CI) of D'.
-		Must be specified as a vector of two values, where the first value corresponds to the CL and the second value corresponds to the CU.
-		If WP method to compute CI of |D'| was specified, then a SNP pair is in strong LD if CL >= ld_lower_ci and CU >= ld_upper_ci.
-		If AV method to compute CI of D' was specified, then a SNP pair is in strong LD if CL >= ld_lower_ci and CU >= ld_upper_ci or CL <= -ld_upper_ci and CU <= ld_lower_ci.
-		By default, the threshold for the CL is 0.7 and for the CU is 0.98 (Gabriel et al., 2002).
+		Numeric vector with 2 values: thresholds for the lower bound (CL) and upper bound (CU) of the 90\% CI of D'.
+		Following Gabriel et al. (2002), default is c(0.7, 0.98).
 	}
 	\item{ehr_ci}{
-		A threshold for the upper bound (CU) of the 90\% confidence interval (CI) of D'.
-		If WP method to compute CI of |D'| was specified, then a SNP pair shows strong evidence of historical recombination (EHR) if CU <= ehr_upper_ci. 
-		If AV method to compute CI of D' was specified, then a SNP pair shows strong EHR if CL >= ehr_upper_ci and CU <= ehr_upper_ci.
-		By default, the threshold for the CU is 0.9 (Gabriel et al., 2002).
+		Threshold value for the evidence of historical recombination. 
+		Following Gabriel et al. (2002), default is 0.9.
 	}
 	\item{ld_fraction}{
-		A threshold for the fraction of strong LD SNP pairs within a haplotype block.
-		If the ratio of strong LD SNP pairs to all informative (strong LD and strong EHR) SNP pairs is greater (>=) than ld_fraction, then a chromosomal region is a haplotype block.
-		By default, the threshold is 0.95 (Gabriel et al., 2002).
+		Fraction of strong LD SNP pairs over all informative pairs that is needed to classify a sequence of SNP as a haplotype block.
+		Following Gabriel et al. (2002), default is 0.95.
 	}
 	\item{pruning_method}{
 		Name of a search space pruning method.
-		Supported methods are MIG, MIG+ and MIG++ (default).
-		The MIG doesn't prune the search space and calculates correlations between all possible SNP pairs.
-		The MIG+ avoids the calculation of correlations between SNP pairs that don't influence the final haplotype block partitioning.
-		The MIG++ is an improved version of MIG+ that performs more precise pruning and significantly reduces the runtime.
-		All pruning methods produce identical haplotype block partitioning.
+		Supported  methods are MIG, MIG+ and MIG++ (default).
 	}
 	\item{window}{
 		Size of the window in MIG++ search space pruning method.
@@ -95,18 +81,18 @@
 	# load LDExplorer library
 	library(LDExplorer)
 	
-	# run mig() function on HapMap phase II CEU data with default arguments: computationally fastest approach.
+	# run mig() function on HapMap phase II CEU data with default arguments.
 	mig(
 		phase_file = "HapMapII_r22_CEU_chr20_31767872_33700401.phase.gz", 
 		output_file = "HapMapII_r22_CEU_chr20_31767872_33700401.blocks.txt", 
-		file_format = "HAPMAP2",
-		legend_file = "HapMapII_r22_CEU_chr20_31767872_33700401.legend.txt.gz"
+		phase_file_format = "HAPMAP2",
+		map_file = "HapMapII_r22_CEU_chr20_31767872_33700401.legend.txt.gz"
 	)
 	
 	# show contents of the input script
 	file.show("HapMapII_r22_CEU_chr20_31767872_33700401.blocks.txt", title="HapMapII_r22_CEU_chr20_31767872_33700401.blocks.txt")
 	
-	# run mig() function on 1000 Genomes Project CEU data with default arguments: computationally fastest approach.
+	# run mig() function on 1000 Genomes Project CEU data with default arguments.
 	mig(
 		phase_file = "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.vcf.gz", 
 		output_file = "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks"
