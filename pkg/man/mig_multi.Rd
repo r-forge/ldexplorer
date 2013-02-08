@@ -5,20 +5,28 @@
 	Function for the efficient whole-genome haplotype block partitioning.
 	Haplotype blocks are defined based on D' coefficient of linkage disequilibrium (Gabriel et al., 2002).
 }
-\usage{mig_multi(phase_files, output_files, phase_file_format = "VCF", map_files = NULL, maf = 0.0, ci_method = "WP", l_density = 100, ld_ci = c(0.7, 0.98), ehr_ci = 0.9, ld_fraction = 0.95, pruning_method = "MIG++", windows = NULL)}
+\usage{
+	mig_multi(phase_files, output_files, phase_file_format = "VCF", 
+	map_files = NULL, maf = 0.0, ci_method = "WP",
+	l_density = 100, ld_ci = c(0.7, 0.98), ehr_ci = 0.9, 
+	ld_fraction = 0.95, pruning_method = "MIG++", windows = NULL)
+}
 \arguments{
 	\item{phase_files}{
-		Name of the input file with phased genotypes in VCF or HAPMAP2 format.
+		The list of names of the input files with phased genotypes.
+		All input files must be in the same format: VCF or HAPMAP2.
 	}
 	\item{output_files}{
-		Name of the output file where to store the haplotype blocks.
+		The list of names of the output files where to store the haplotype blocks.
+		One output file for every input file.
 	}
 	\item{phase_file_format}{
-		Format of the phase_file: VCF (default) or HAPMAP2.
+		Format of the phase_files: VCF (default) or HAPMAP2.
 	}
 	\item{map_files}{
-		Name of the map file with base-pair position for each SNP.
-		Mandatory when file_formatq = HAPMAP2.
+		The list of names of the map files with base-pair positions of each SNP.
+		One map file for every input file.
+		Mandatory when file_format = HAPMAP2.
 	}
 	\item{maf}{
 		Minor Allele Frequency (MAF) threshold: SNPs with MAF <= maf will not be considered.
@@ -26,7 +34,7 @@
 	}
 	\item{ci_method}{
 		Confidence interval (CI) estimation method.
-		Supported methods are WP (default) = Wall and Pitchard (2003) method; AV = approximate variance estimator by Zapata et al (1997).
+		Supported methods are WP (default) = Wall and Pritchard (2003) method; AV = approximate variance estimator by Zapata et al. (1997).
 	}
 	\item{l_density}{
 		Number of points at which to evaluate the likelihood (applies only to the WP method). 
@@ -51,18 +59,23 @@
 		Supported  methods are MIG, MIG+ and MIG++ (default).
 	}
 	\item{windows}{
-		Size of the window in MIG++ search space pruning method.
-		During an iterative processing of a chromosome, the number of considered SNP pairs at every iteration is restricted by the window.
-		For every SNP, only its correlation with SNPs, which are within the window, are computed.
-		By default, the window is calculated on the fly based on the chromosome length and ld_fraction threshold.
+		Numeric vector where every value corresponds to the according input file (chromosome) and specifies the number of SNPs within the window in MIG++ search space pruning method.
+		If NULL (default), all values are calculated on the fly based on the corresponding chromosome lengths and ld_fraction.
 	}
 }
 \references{
-	Gabriel, Stacey B. et al. (2002) \emph{The Structure of Haplotype Blocks in the Human Genome}. Science, 296(5576), 2225-2229.
+	Zapata, C., Alvarez, G., Carollo, C. (1997) Approximate variance of the standardized measure of gametic disequilibrium D'. \emph{American Journal of Human Genetics}, \bold{61}(3), 771--774.
+
+	Gabriel, S. B. et al. (2002) The Structure of Haplotype Blocks in the Human Genome. \emph{Science}, \bold{296}(5576), 2225--2229.
 	
-	J.C. Barrett et al. (2005) \emph{Haploview: analysis and visualization of LD and haplotype maps}. Bioinformatics, 21(2), 263-265.
+	Wall, J. D. and Pritchard, J. K. (2003) Assessing the performance of the haplotype block model of linkage disequilibrium. \emph{American Journal of Human Genetics}, \bold{73}(3), 502--515.
+	
+	Barrett, J. C. et al. (2005) Haploview: analysis and visualization of LD and haplotype maps. \emph{Bioinformatics}, \bold{21}(2), 263--265.
 }
 \author{Daniel Taliun, Johann Gamper, Cristian Pattaro}
+\seealso{
+	See \link{mig} for the haplotype block definition, description of the D' distribution modeling and pruning methods.
+}
 \keyword{misc}
 \keyword{utilities}
 \keyword{package}
