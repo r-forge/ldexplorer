@@ -3,6 +3,7 @@
 \title{Memory-efficient Implementation of Gabriel et al. 2002 haplotype block definition}
 \description{
 	Function for the efficient whole-genome haplotype block partitioning.
+	It is analogous to \code{\link{mig}} and allows to specify several input files (chromosomes) at once.
 	Haplotype blocks are defined based on D' coefficient of linkage disequilibrium (Gabriel et al., 2002).
 }
 \usage{
@@ -26,6 +27,7 @@
 	\item{map_files}{
 		The list of names of the map files with base-pair positions of each SNP.
 		One map file for every input file.
+		The order of map files must correspond to the order of input files.
 		Mandatory when file_format = HAPMAP2.
 	}
 	\item{maf}{
