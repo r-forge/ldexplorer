@@ -182,6 +182,6 @@
     message <- c("\n", rep("#", 40), "\n")
     message <- c(message, "\nAll input and output files of this example are located in directory:\n", newWd, "\n")
     message <- c(message, "\n", rep("#", 40),"\n")
-    scat(message, sep="")
+    cat(message, sep="")
 }
 }

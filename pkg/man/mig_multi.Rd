@@ -7,7 +7,7 @@
 	Haplotype blocks are defined based on D' coefficient of linkage disequilibrium (Gabriel et al., 2002).
 }
 \usage{
-	mig_multi(phase_files, output_files, phase_file_format = "VCF", 
+	mig_multi(phase_files, output_files, processes = 1, phase_file_format = "VCF", 
 	map_files = NULL, maf = 0.0, ci_method = "WP",
 	l_density = 100, ld_ci = c(0.7, 0.98), ehr_ci = 0.9, 
 	ld_fraction = 0.95, pruning_method = "MIG++", windows = NULL)
@@ -20,6 +20,10 @@
 	\item{output_files}{
 		The list of names of the output files where to store the haplotype blocks.
 		One output file for every input file.
+	}
+	\item{processes}{
+		An integer >= 1, which indicates the number of parallel processes. 
+		All processes are created on a \emph{localhost} and communicate through sockets.
 	}
 	\item{phase_file_format}{
 		Format of the phase_files: VCF (default) or HAPMAP2.
