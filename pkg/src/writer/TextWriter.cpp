@@ -35,13 +35,18 @@ TextWriter::~TextWriter() {
 	buffer = NULL;
 }
 
-void TextWriter::open() throw (Exception) {
+void TextWriter::open(bool append) throw (Exception) {
 	if (ofile_stream.is_open()) {
 		close();
 	}
 
 	ofile_stream.clear();
-	ofile_stream.open(file_name, ios::binary);
+
+	if (append == true) {
+		ofile_stream.open(file_name, ios::app);
+	} else {
+		ofile_stream.open(file_name, ios::binary);
+	}
 
 	if (ofile_stream.fail()) {
 		throw Exception(__FILE__, __LINE__, "Error while opening '%s' file.", file_name);

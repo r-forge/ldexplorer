@@ -37,7 +37,7 @@ public:
 	TextWriter(unsigned int buffer_size = DEFAULT_BUFFER_SIZE) throw (Exception);
 	virtual ~TextWriter();
 
-	void open() throw (Exception);
+	void open(bool append) throw (Exception);
 	void close() throw (Exception);
 	void write(const char* format, ...) throw (Exception);
 };

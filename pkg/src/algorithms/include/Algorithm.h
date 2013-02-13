@@ -70,6 +70,10 @@ protected:
 	static int paircmp(const void* first, const void* second);
 
 public:
+	struct info {
+
+	};
+
 	static const double EPSILON;
 
 	Algorithm(Db& db) throw (Exception);
@@ -88,8 +92,10 @@ public:
 	unsigned int get_n_strong_pairs();
 	unsigned int get_n_blocks();
 
-	void write_blocks(const char* output_file_name, const char* input_phase_file_name, const char* input_map_file_name,
-			double maf_threshold, bool region, unsigned long int start, unsigned long int end, const char* ci_method) throw (Exception);
+//	void write_blocks(const char* output_file_name, const char* input_phase_file_name, const char* input_map_file_name,
+//			double maf_threshold, bool region, unsigned long int start, unsigned long int end, const char* ci_method) throw (Exception);
+
+	void write_blocks(const char* output_file_name) throw (Exception);
 
 	double get_memory_usage_preliminary_blocks();
 	double get_memory_usage_final_blocks();

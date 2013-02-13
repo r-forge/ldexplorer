@@ -58,15 +58,11 @@ public:
 	virtual ~CI();
 
 	double get_D(unsigned int marker_a, unsigned int marker_b);
-
 	double get_Dprime(unsigned int marker_a, unsigned int marker_b);
-	void get_Dprime(const char* output_file_name) throw (Exception);
-
 	double get_r(unsigned int marker_a, unsigned int marker_b);
-	void get_r(const char* output_file_name) throw (Exception);
 
 	virtual void get_CI(unsigned int marker_a, unsigned int marker_b, double* dprime_lower_ci, double* dprime_upper_ci);
-	void get_CI(const char* output_file_name) throw (Exception);
+
 };
 
 #endif

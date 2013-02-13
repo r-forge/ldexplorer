@@ -38,7 +38,7 @@ public:
 	void set_file_name(const char* file_name) throw (Exception);
 	const char* get_file_name();
 
-	virtual void open() throw (Exception) = 0;
+	virtual void open(bool append) throw (Exception) = 0;
 	virtual void close() throw (Exception) = 0;
 	virtual void write(const char* format, ...) throw (Exception) = 0;
 };

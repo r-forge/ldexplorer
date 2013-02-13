@@ -137,10 +137,12 @@ unsigned int Algorithm::get_n_blocks() {
 	return n_blocks;
 }
 
-void Algorithm::write_blocks(const char* output_file_name,
-		const char* input_phase_file_name, const char* input_map_file_name,
-		double maf_threshold, bool region, unsigned long int start, unsigned long int end,
-		const char* ci_method) throw (Exception) {
+//void Algorithm::write_blocks(const char* output_file_name,
+//		const char* input_phase_file_name, const char* input_map_file_name,
+//		double maf_threshold, bool region, unsigned long int start, unsigned long int end,
+//		const char* ci_method) throw (Exception) {
+
+void Algorithm::write_blocks(const char* output_file_name) throw (Exception) {
 	Writer* writer = NULL;
 
 	pair strong_pair;
@@ -158,23 +160,23 @@ void Algorithm::write_blocks(const char* output_file_name,
 	try {
 		writer = WriterFactory::create(WriterFactory::TEXT);
 		writer->set_file_name(output_file_name);
-		writer->open();
+		writer->open(true);
 
-		writer->write("#PHASE FILE: %s\n", input_phase_file_name);
-		if (input_map_file_name != NULL) {
-			writer->write("#MAP FILE: %s\n", input_map_file_name);
-		}
-		if (region) {
-			writer->write("#REGION: [%u, %u]\n", start, end);
-		}
-		writer->write("#HAPLOTYPES: %u\n", db->n_haplotypes);
-		writer->write("#MARKERS: %u\n", db->all_n_markers);
-		writer->write("#METHOD: %s\n", ci_method);
-		writer->write("#MAF > %g\n", maf_threshold);
-		writer->write("#MARKERS (MAF > %g): %u\n", maf_threshold, db->n_markers);
+//		writer->write("#PHASE FILE: %s\n", input_phase_file_name);
+//		if (input_map_file_name != NULL) {
+//			writer->write("#MAP FILE: %s\n", input_map_file_name);
+//		}
+//		if (region) {
+//			writer->write("#REGION: [%u, %u]\n", start, end);
+//		}
+//		writer->write("#HAPLOTYPES: %u\n", db->n_haplotypes);
+//		writer->write("#MAF > %g\n", maf_threshold);
+//		writer->write("#ALL SNPs: %u\n", db->all_n_markers);
+//		writer->write("#FILTERED SNPs: %u\n", db->n_markers);
+//		writer->write("#D' CI COMPUTATION METHOD: %s\n", ci_method);
 
 		writer->write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-				"BLOCK_NAME", "FIRST_MARKER", "LAST_MARKER", "FIRST_MARKER_ID", "LAST_MARKER_ID", "START_BP", "END_BP", "N_MARKERS", "N_HAPS", "N_UNIQUE_HAPS", "N_COMMON_HAPS", "HAPS_DIVERSITY");
+				"BLOCK_NAME", "FIRST_SNP", "LAST_SNP", "FIRST_SNP_ID", "LAST_SNP_ID", "START_BP", "END_BP", "N_SNPS", "N_HAPS", "N_UNIQUE_HAPS", "N_COMMON_HAPS", "HAPS_DIVERSITY");
 
 		for (unsigned int b = 0u; b < n_blocks; ++b) {
 			strong_pair = strong_pairs[blocks[b]];

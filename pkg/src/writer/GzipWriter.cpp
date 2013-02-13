@@ -35,8 +35,12 @@ GzipWriter::~GzipWriter() {
 	buffer = NULL;
 }
 
-void GzipWriter::open() throw (Exception) {
-	outfile = gzopen(file_name, "wb");
+void GzipWriter::open(bool append) throw (Exception) {
+	if (append == true) {
+		outfile = gzopen(file_name, "ab");
+	} else {
+		outfile = gzopen(file_name, "wb");
+	}
 	if (outfile == NULL) {
 		throw Exception(__FILE__, __LINE__, "Error while opening '%s' file.", file_name);
 	}
