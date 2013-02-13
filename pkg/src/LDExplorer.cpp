@@ -78,7 +78,7 @@ extern "C" {
 			writer->write("# VERSION: %s\n", VERSION);
 			writer->write("# PHASE FILE: %s\n", c.phase_file);
 			writer->write("# MAP FILE: %s\n", c.map_file == NULL ? "NA" : c.map_file);
-			if (c.is_region) {
+			if ((c.region[0] > 0) || (c.region[1] != numeric_limits<long int>::max())) {
 				writer->write("# REGION: [%u, %u]\n", c.region[0], c.region[1]);
 			} else {
 				writer->write("# REGION: NA\n");
@@ -431,28 +431,14 @@ extern "C" {
 
 			Rprintf("\tPhase file: %s\n", c.phase_file);
 			Rprintf("\tMap file: %s\n", c.map_file == NULL ? "NA" : c.map_file);
-			Rprintf("\tRegion: ");
-			if (c.is_region) {
-				Rprintf("[%u, %u]\n", c.region[0], c.region[1]);
+			if ((c.region[0] > 0) || (c.region[1] != numeric_limits<long int>::max())) {
+				Rprintf("\tRegion: [%u, %u]\n", c.region[0], c.region[1]);
 			} else {
-				Rprintf("NA\n");
+				Rprintf("\tRegion: NA\n");
 			}
 			Rprintf("\tMAF filter: > %g\n", c.maf);
 
-			if (c.is_region) {
-				if (auxiliary::strcmp_ignore_case(c.phase_file_format, Db::VCF) == 0) {
-					db.load_vcf(c.phase_file, c.region[0], c.region[1]);
-				} else if (auxiliary::strcmp_ignore_case(c.phase_file_format, Db::HAPMAP2) == 0) {
-					db.load_hapmap2(c.map_file, c.phase_file, c.region[0], c.region[1]);
-				}
-			} else {
-				if (auxiliary::strcmp_ignore_case(c.phase_file_format, Db::VCF) == 0) {
-					db.load_vcf(c.phase_file);
-				} else if (auxiliary::strcmp_ignore_case(c.phase_file_format, Db::HAPMAP2) == 0) {
-					db.load_hapmap2(c.map_file, c.phase_file);
-				}
-			}
-
+			db.load(c.phase_file, c.map_file, c.region[0], c.region[1], c.phase_file_format);
 			db.mask(c.maf);
 
 			c.all_snps = db.get_all_n_markers();

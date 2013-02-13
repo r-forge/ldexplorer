@@ -280,6 +280,24 @@ void Db::reallocate() throw (Exception) {
 	current_heap_size = new_heap_size;
 }
 
+void Db::load(const char* hap_file_name, const char* map_file_name, unsigned long int start_position, unsigned long int end_position, const char* type) throw (Exception) {
+	if (auxiliary::strcmp_ignore_case(type, VCF) == 0) {
+		if ((start_position != 0u) || (end_position != numeric_limits<unsigned long int>::max())) {
+			load_vcf(hap_file_name, start_position, end_position);
+		} else {
+			load_vcf(hap_file_name);
+		}
+	} else if (auxiliary::strcmp_ignore_case(type, HAPMAP2) == 0) {
+		if ((start_position != 0u) || (end_position != numeric_limits<unsigned long int>::max())) {
+			load_hapmap2(map_file_name, hap_file_name, start_position, end_position);
+		} else {
+			load_hapmap2(map_file_name, hap_file_name);
+		}
+	} else {
+		throw Exception(__FILE__, __LINE__, "Unknown file type '%s' was specified.", type);
+	}
+}
+
 void Db::load_vcf(const char* file_name, unsigned long int start_position, unsigned long int end_position) throw (Exception) {
 	Reader* reader = NULL;
 
