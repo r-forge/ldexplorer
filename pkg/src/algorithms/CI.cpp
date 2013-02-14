@@ -21,8 +21,8 @@
 
 const double CI::EPSILON = 0.000000001;
 
-CI::CI(Db& db) :
-		db(&db),
+CI::CI(const DbView* db) :
+		db(db),
 		observed_haplotype_a(NULL), observed_haplotype_b(NULL),
 		n_observed_haplotype_ref_a_ref_b(0u), n_observed_haplotype_ref_a_alt_b(0u), n_observed_haplotype_alt_a_ref_b(0u), n_observed_haplotype_alt_a_alt_b(0u),
 		observed_allele_a('\0'), observed_allele_b('\0'),

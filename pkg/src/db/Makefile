@@ -19,7 +19,7 @@
 
 include $(R_MAKECONF)
 
-applib:	Unique.o Db.o
+applib:	Unique.o DbView.o Db.o
 
 clean:  
 	@-rm -f *.o

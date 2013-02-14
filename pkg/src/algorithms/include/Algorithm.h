@@ -21,10 +21,11 @@
 #define ALGORITHM_H_
 
 #include <map>
+#include <vector>
 #include <math.h>
 
 #include "../../auxiliary/include/auxiliary.h"
-#include "../../db/include/Db.h"
+#include "../../db/include/DbView.h"
 #include "../../writer/include/WriterFactory.h"
 #include "CIFactory.h"
 
@@ -53,7 +54,7 @@ protected:
 	double strong_pair_weight;
 	double recomb_pair_weight;
 
-	Db* db;
+	const DbView* db;
 
 	pair* strong_pairs;
 	unsigned int n_strong_pairs;
@@ -76,7 +77,7 @@ public:
 
 	static const double EPSILON;
 
-	Algorithm(Db& db) throw (Exception);
+	Algorithm(const DbView* db) throw (Exception);
 	virtual ~Algorithm();
 
 	void set_strong_pair_cl(double ci_lower_bound);

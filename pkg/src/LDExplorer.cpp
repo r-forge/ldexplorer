@@ -425,6 +425,7 @@ extern "C" {
 			double execution_time = 0.0;
 
 			Db db;
+			const DbView* dbview = NULL;
 
 			Rprintf("Loading data...\n");
 			start_time = clock();
@@ -439,11 +440,12 @@ extern "C" {
 			Rprintf("\tMAF filter: > %g\n", c.maf);
 
 			db.load(c.phase_file, c.map_file, c.region[0], c.region[1], c.phase_file_format);
-			db.mask(c.maf);
+			dbview = db.create_view(c.maf, 0u, numeric_limits<long int>::max());
 
-			c.all_snps = db.get_all_n_markers();
-			c.filtered_snps = db.get_n_markers();
-			c.haplotypes = db.get_n_haplotypes();
+			c.all_snps = dbview->n_unfiltered_markers;
+			c.filtered_snps = dbview->n_markers;
+			c.haplotypes = dbview->n_haplotypes;
+
 
 			Rprintf("\tAll SNPs: %u\n", c.all_snps);
 			Rprintf("\tFiltered SNPs: %u\n", c.filtered_snps);
@@ -471,7 +473,7 @@ extern "C" {
 			Rprintf("\tWindow: ");
 			if (auxiliary::strcmp_ignore_case(c.pruning_method, AlgorithmFactory::ALGORITHM_MIGPP) == 0) {
 				if (is_default_window) {
-					c.window = (long int)(((double)db.get_n_markers() * (1.0 - c.ld_fraction)) / 2.0);
+					c.window = (long int)(((double)dbview->n_markers * (1.0 - c.ld_fraction)) / 2.0);
 					if (c.window <= 0) {
 						c.window = 1;
 					}
@@ -481,7 +483,7 @@ extern "C" {
 				Rprintf("NA\n", c.window);
 			}
 
-			algorithm = AlgorithmFactory::create(db, c.pruning_method);
+			algorithm = AlgorithmFactory::create(dbview, c.pruning_method);
 
 			algorithm->set_strong_pair_cl(c.ld_ci[0]);
 			algorithm->set_strong_pair_cu(c.ld_ci[1]);

@@ -25,6 +25,7 @@
 
 #include "../../auxiliary/include/auxiliary.h"
 #include "../../reader/include/ReaderFactory.h"
+#include "DbView.h"
 #include "Unique.h"
 
 using namespace std;
@@ -67,13 +68,7 @@ private:
 	double* all_major_allele_freqs;
 	char** all_haplotypes;
 
-	unsigned int n_markers;
-	char** markers;
-	unsigned long int* positions;
-	char* major_alleles;
-	char* minor_alleles;
-	double* major_allele_freqs;
-	char** haplotypes;
+	vector<DbView*> views;
 
 	unsigned int current_heap_size;
 
@@ -105,24 +100,12 @@ public:
 
 	void load(const char* hap_file_name, const char* map_file_name, unsigned long int start_position, unsigned long int end_position, const char* type) throw (Exception);
 
-	void mask(double maf_threshold) throw (Exception);
+	const DbView* create_view(double maf_threshold, unsigned long int start_position, unsigned long int end_position) throw (Exception);
 
 	unsigned int get_n_haplotypes();
 	unsigned int get_all_n_markers();
-	unsigned int get_n_markers();
-	const char* get_marker(unsigned int index);
-	unsigned int get_position(unsigned int index);
-	const char* get_haplotype(unsigned int index);
 
 	double get_memory_usage();
-
-	friend class CI;
-	friend class CIWP;
-	friend class CIAV;
-	friend class Algorithm;
-	friend class AlgorithmMIG;
-	friend class AlgorithmMIGP;
-	friend class AlgorithmMIGPP;
 };
 
 #endif

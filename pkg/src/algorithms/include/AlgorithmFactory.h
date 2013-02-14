@@ -21,7 +21,7 @@
 #define ALGORITHMFACTORY_H_
 
 #include "../../exception/include/Exception.h"
-#include "../../db/include/Db.h"
+#include "../../db/include/DbView.h"
 #include "Algorithm.h"
 #include "AlgorithmMIG.h"
 #include "AlgorithmMIGP.h"
@@ -36,7 +36,7 @@ public:
 	AlgorithmFactory();
 	virtual ~AlgorithmFactory();
 
-	static Algorithm* create(Db& db, const char* name) throw (Exception);
+	static Algorithm* create(const DbView* db, const char* name) throw (Exception);
 };
 
 #endif

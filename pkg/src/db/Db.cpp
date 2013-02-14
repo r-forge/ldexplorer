@@ -57,12 +57,8 @@ const unsigned int Db::HEAP_INCREMENT = 100000;
 
 const double Db::EPSILON = 0.000000001;
 
-Db::Db() throw (Exception):
-		n_haplotypes(0u),
-		all_n_markers(0u), all_markers(NULL), all_positions(NULL), all_major_alleles(NULL),
-		all_minor_alleles(), all_major_allele_freqs(NULL), all_haplotypes(NULL),
-		n_markers(0u), markers(NULL), positions(NULL), major_alleles(NULL),
-		minor_alleles(NULL), major_allele_freqs(NULL), haplotypes(NULL),
+Db::Db() throw (Exception): n_haplotypes(0u), all_n_markers(0u), all_markers(NULL), all_positions(NULL),
+		all_major_alleles(NULL), all_minor_alleles(), all_major_allele_freqs(NULL), all_haplotypes(NULL),
 		current_heap_size(HEAP_SIZE) {
 
 	all_markers = (char**)malloc(current_heap_size * sizeof(char*));
@@ -110,6 +106,13 @@ Db::Db() throw (Exception):
 }
 
 Db::~Db() {
+	vector<DbView*>::iterator views_it;
+
+	for (views_it = views.begin(); views_it != views.end(); ++views_it) {
+		delete *views_it;
+	}
+	views.clear();
+
 	free_markers(current_heap_size);
 	free_positions(current_heap_size);
 	free_alleles(current_heap_size);
@@ -118,13 +121,6 @@ Db::~Db() {
 }
 
 void Db::free_markers(unsigned int heap_size) {
-	if (markers != NULL) {
-		if (markers != all_markers) {
-			free(markers);
-		}
-		markers = NULL;
-	}
-
 	if (all_markers != NULL) {
 		for (unsigned int i = 0u; i < heap_size; ++i) {
 			if (all_markers[i] != NULL) {
@@ -139,13 +135,6 @@ void Db::free_markers(unsigned int heap_size) {
 }
 
 void Db::free_positions(unsigned int heap_size) {
-	if (positions != NULL) {
-		if (positions != all_positions) {
-			free(positions);
-		}
-		positions = NULL;
-	}
-
 	if (all_positions != NULL) {
 		free(all_positions);
 		all_positions = NULL;
@@ -153,20 +142,6 @@ void Db::free_positions(unsigned int heap_size) {
 }
 
 void Db::free_alleles(unsigned int heap_size) {
-	if (major_alleles != NULL) {
-		if (major_alleles != all_major_alleles) {
-			free(major_alleles);
-		}
-		major_alleles = NULL;
-	}
-
-	if (minor_alleles != NULL) {
-		if (minor_alleles != all_minor_alleles) {
-			free(minor_alleles);
-		}
-		minor_alleles = NULL;
-	}
-
 	if (all_major_alleles != NULL) {
 		free(all_major_alleles);
 		all_major_alleles = NULL;
@@ -179,13 +154,6 @@ void Db::free_alleles(unsigned int heap_size) {
 }
 
 void Db::free_major_allele_freqs(unsigned int heap_size) {
-	if (major_allele_freqs != NULL) {
-		if (major_allele_freqs != all_major_allele_freqs) {
-			free(major_allele_freqs);
-		}
-		major_allele_freqs = NULL;
-	}
-
 	if (all_major_allele_freqs != NULL) {
 		free(all_major_allele_freqs);
 		all_major_allele_freqs = NULL;
@@ -193,13 +161,6 @@ void Db::free_major_allele_freqs(unsigned int heap_size) {
 }
 
 void Db::free_haplotypes(unsigned int heap_size) {
-	if (haplotypes != NULL) {
-		if (haplotypes != all_haplotypes) {
-			free(haplotypes);
-		}
-		haplotypes = NULL;
-	}
-
 	if (all_haplotypes != NULL) {
 		for (unsigned int i = 0u; i < heap_size; ++i) {
 			if (all_haplotypes[i] != NULL) {
@@ -555,7 +516,7 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 		free(tokens);
 		tokens = NULL;
 
-		mask(numeric_limits<double>::quiet_NaN());
+//		mask(numeric_limits<double>::quiet_NaN());
 	} catch (Exception &e) {
 		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", file_name);
 		throw;
@@ -816,8 +777,6 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 
 		free(tokens);
 		tokens = NULL;
-
-		mask(numeric_limits<double>::quiet_NaN());
 	} catch (Exception &e) {
 		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", file_name);
 		throw;
@@ -1081,8 +1040,6 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name, unsi
 
 		free(n_second_alleles);
 		n_second_alleles = NULL;
-
-		mask(numeric_limits<double>::quiet_NaN());
 	} catch (Exception &e) {
 		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", hap_file_name);
 		throw;
@@ -1307,133 +1264,131 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name) thro
 
 		free(n_second_alleles);
 		n_second_alleles = NULL;
-
-		mask(numeric_limits<double>::quiet_NaN());
 	} catch (Exception &e) {
 		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", hap_file_name);
 		throw;
 	}
 }
 
-void Db::mask(double maf_threshold) throw (Exception) {
+const DbView* Db::create_view(double maf_threshold, unsigned long int start_position, unsigned long int end_position) throw (Exception) {
+	DbView* view = NULL;
 
-	if (isnan(maf_threshold)) {
-		markers = all_markers;
-		positions = all_positions;
-		major_alleles = all_major_alleles;
-		minor_alleles = all_minor_alleles;
-		major_allele_freqs = all_major_allele_freqs;
-		haplotypes = all_haplotypes;
-		n_markers = all_n_markers;
-	} else {
-		if (markers != NULL) {
-			if (markers != all_markers) {
-				free(markers);
-			}
-			markers = NULL;
-		}
+	unsigned int start_index = 0u;
+	unsigned int end_index = 0u;
+	unsigned int n_markers = 0u;
 
-		if (positions != NULL) {
-			if (positions != all_positions) {
-				free(positions);
-			}
-			positions = NULL;
-		}
-
-		if (major_alleles != NULL) {
-			if (major_alleles != all_major_alleles) {
-				free(major_alleles);
-			}
-			major_alleles = NULL;
-		}
-
-		if (minor_alleles != NULL) {
-			if (minor_alleles != all_minor_alleles) {
-				free(minor_alleles);
-			}
-			minor_alleles = NULL;
-		}
-
-		if (major_allele_freqs != NULL) {
-			if (major_allele_freqs != all_major_allele_freqs) {
-				free(major_allele_freqs);
-			}
-			major_allele_freqs = NULL;
-		}
-
-		if (haplotypes != NULL) {
-			if (haplotypes != all_haplotypes) {
-				free(haplotypes);
-			}
-			haplotypes = NULL;
-		}
-
-		n_markers = 0u;
-
+	if ((start_position > 0u) || (end_position != numeric_limits<unsigned long int>::max())) {
 		for (unsigned int i = 0u; i < all_n_markers; ++i) {
+			if (all_positions[i] >= start_position) {
+				start_index = i;
+				end_index = i;
+				break;
+			}
+		}
+
+		for (unsigned int i = all_n_markers - 1u; i >= start_index; --i) {
+			if (all_positions[i] <= end_position) {
+				end_index = i;
+				break;
+			}
+		}
+	} else {
+		start_index = 0u;
+		end_index = all_n_markers - 1u;
+	}
+
+	if ((end_index - start_index) == 0u) {
+		return NULL;
+	}
+
+	if (!isnan(maf_threshold)) {
+		for (unsigned int i = start_index; i <= end_index; ++i) {
 			if (auxiliary::fcmp((1.0 - all_major_allele_freqs[i]), maf_threshold, EPSILON) > 0) {
 				++n_markers;
 			}
 		}
+	} else {
+		n_markers = end_index - start_index + 1u;
+	}
 
-		if (n_markers == 0u) {
-			return;
-		} else if (n_markers == all_n_markers) {
-			markers = all_markers;
-			positions = all_positions;
-			major_alleles = all_major_alleles;
-			minor_alleles = all_minor_alleles;
-			major_allele_freqs = all_major_allele_freqs;
-			haplotypes = all_haplotypes;
-		} else {
-			markers = (char**)malloc(n_markers * sizeof(char*));
-			if (markers == NULL) {
-				throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
-			}
+	if (n_markers == 0u) {
+		return NULL;
+	}
 
-			positions = (unsigned long int*)malloc(n_markers * sizeof(unsigned long int));
-			if (positions == NULL) {
-				throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
-			}
+	view = new DbView();
 
-			major_alleles = (char*)malloc(n_markers * sizeof(char));
-			if (major_alleles == NULL) {
-				throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
-			}
+	views.push_back(view);
 
-			minor_alleles = (char*)malloc(n_markers * sizeof(char));
-			if (minor_alleles == NULL) {
-				throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
-			}
+	view->n_haplotypes = n_haplotypes;
 
-			major_allele_freqs = (double*)malloc(n_markers * sizeof(double));
-			if (major_allele_freqs == NULL) {
-				throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
-			}
+	view->n_unfiltered_markers = end_index - start_index + 1u;
+	view->n_markers = n_markers;
 
-			haplotypes = (char**)malloc(n_markers * sizeof(char*));
-			if (haplotypes == NULL) {
-				throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
-			}
+	view->markers = (char**)malloc(view->n_markers * sizeof(char*));
+	if (view->markers == NULL) {
+		throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
+	}
 
-			for (unsigned int i = 0u, j = 0u; i < all_n_markers; ++i) {
-				if (auxiliary::fcmp((1.0 - all_major_allele_freqs[i]), maf_threshold, EPSILON) > 0) {
-					if (j >= n_markers) {
-						throw Exception(__FILE__, __LINE__, "Array index is out of range.");
-					}
+	view->positions = (unsigned long int*)malloc(view->n_markers * sizeof(unsigned long int));
+	if (view->positions == NULL) {
+		throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
+	}
 
-					markers[j] = all_markers[i];
-					positions[j] = all_positions[i];
-					major_alleles[j] = all_major_alleles[i];
-					minor_alleles[j] = all_minor_alleles[i];
-					major_allele_freqs[j] = all_major_allele_freqs[i];
-					haplotypes[j] = all_haplotypes[i];
+	view->major_alleles = (char*)malloc(view->n_markers * sizeof(char));
+	if (view->major_alleles == NULL) {
+		throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
+	}
 
-					++j;
+	view->minor_alleles = (char*)malloc(view->n_markers * sizeof(char));
+	if (view->minor_alleles == NULL) {
+		throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
+	}
+
+	view->major_allele_freqs = (double*)malloc(view->n_markers * sizeof(double));
+	if (view->major_allele_freqs == NULL) {
+		throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
+	}
+
+	view->haplotypes = (char**)malloc(view->n_markers * sizeof(char*));
+	if (view->haplotypes == NULL) {
+		throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
+	}
+
+	if (!isnan(maf_threshold)) {
+		for (unsigned int i = start_index, j = 0u; i <= end_index; ++i) {
+			if (auxiliary::fcmp((1.0 - all_major_allele_freqs[i]), maf_threshold, EPSILON) > 0) {
+				if (j >= view->n_markers) {
+					throw Exception(__FILE__, __LINE__, "Array index is out of range.");
 				}
+
+				view->markers[j] = all_markers[i];
+				view->positions[j] = all_positions[i];
+				view->major_alleles[j] = all_major_alleles[i];
+				view->minor_alleles[j] = all_minor_alleles[i];
+				view->major_allele_freqs[j] = all_major_allele_freqs[i];
+				view->haplotypes[j] = all_haplotypes[i];
+
+				++j;
 			}
 		}
+	} else {
+		for (unsigned int i = start_index, j = 0u; i <= end_index; ++i) {
+			if (j >= view->n_markers) {
+				throw Exception(__FILE__, __LINE__, "Array index is out of range.");
+			}
+
+			view->markers[j] = all_markers[i];
+			view->positions[j] = all_positions[i];
+			view->major_alleles[j] = all_major_alleles[i];
+			view->minor_alleles[j] = all_minor_alleles[i];
+			view->major_allele_freqs[j] = all_major_allele_freqs[i];
+			view->haplotypes[j] = all_haplotypes[i];
+
+			++j;
+		}
 	}
+
+	return view;
 }
 
 unsigned int Db::get_n_haplotypes() {
@@ -1444,24 +1399,13 @@ unsigned int Db::get_all_n_markers() {
 	return all_n_markers;
 }
 
-unsigned int Db::get_n_markers() {
-	return n_markers;
-}
-
-const char* Db::get_marker(unsigned int index) {
-	return markers[index];
-}
-
-unsigned int Db::get_position(unsigned int index) {
-	return positions[index];
-}
-
-const char* Db::get_haplotype(unsigned int index) {
-	return haplotypes[index];
-}
-
 double Db::get_memory_usage() {
 	double memory_usage = 0.0;
+	vector<DbView*>::iterator views_it;
+
+	for (views_it = views.begin(); views_it != views.end(); ++views_it) {
+		memory_usage += (*views_it)->get_memory_usage();
+	}
 
 	memory_usage += (current_heap_size * sizeof(char*)) / 1048576.0;
 	for (unsigned int i = 0u; i < current_heap_size; ++i) {
@@ -1469,36 +1413,16 @@ double Db::get_memory_usage() {
 			memory_usage += ((strlen(all_markers[i]) + 1u) * sizeof(char)) / 1048576.0;
 		}
 	}
-	if ((markers != NULL) && (markers != all_markers)) {
-		memory_usage += (n_markers * sizeof(char*)) / 1048576.0;
-	}
 
 	memory_usage += (current_heap_size * sizeof(unsigned long int)) / 1048576.0;
-	if ((positions != NULL) && (positions != all_positions)) {
-		memory_usage += (n_markers * sizeof(unsigned long int)) / 1048576.0;
-	}
-
 	memory_usage += (2u * current_heap_size * sizeof(char)) / 1048576.0;
-	if ((major_alleles != NULL) && (major_alleles != all_major_alleles)) {
-		memory_usage += (n_markers * sizeof(char)) / 1048576.0;
-	}
-	if ((minor_alleles != NULL) && (minor_alleles != all_minor_alleles)) {
-		memory_usage += (n_markers * sizeof(char)) / 1048576.0;
-	}
-
 	memory_usage += (current_heap_size * sizeof(double)) / 1048576.0;
-	if ((major_allele_freqs != NULL) && (major_allele_freqs != all_major_allele_freqs)) {
-		memory_usage += (n_markers * sizeof(double)) / 1048576.0;
-	}
 
 	memory_usage += (current_heap_size * sizeof(char*)) / 1048576.0;
 	for (unsigned int i = 0u; i < current_heap_size; ++i) {
 		if (all_haplotypes[i] != NULL) {
 			memory_usage += (n_haplotypes * sizeof(char)) / 1048576.0;
 		}
-	}
-	if ((haplotypes != NULL) && (haplotypes != all_haplotypes)) {
-		memory_usage += (n_markers * sizeof(char*)) / 1048576.0;
 	}
 
 	return memory_usage;

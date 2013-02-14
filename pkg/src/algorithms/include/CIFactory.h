@@ -21,7 +21,7 @@
 #define CIFACTORY_H_
 
 #include "../../exception/include/Exception.h"
-#include "../../db/include/Db.h"
+#include "../../db/include/DbView.h"
 #include "CI.h"
 #include "CIWP.h"
 #include "CIAV.h"
@@ -35,7 +35,7 @@ public:
 	CIFactory();
 	virtual ~CIFactory();
 
-	static CI* create(Db& db, const char* method, unsigned int precision = 0u) throw (Exception);
+	static CI* create(const DbView* db, const char* method, unsigned int precision = 0u) throw (Exception);
 };
 
 #endif

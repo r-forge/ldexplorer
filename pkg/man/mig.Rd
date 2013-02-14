@@ -165,13 +165,13 @@
     # run mig() function on 1000 Genomes Project CEU data with default arguments.
     mig(
      phase_file = "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.vcf.gz", 
-     output_file = "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks"
+     output_file = "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks.txt"
     )
 	
     # show contents of the input script
     file.show(
-     "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks",
-     title="1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks"
+     "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks.txt",
+     title="1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks.txt"
     )
 	
 \dontshow{

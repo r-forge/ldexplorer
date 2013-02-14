@@ -39,7 +39,7 @@ private:
 	double var_dprime;
 
 public:
-	CIAV(Db& db);
+	CIAV(const DbView* db);
 	virtual ~CIAV();
 
 	void get_CI(unsigned int marker_a, unsigned int marker_b, double* dprime_lower_ci, double* dprime_upper_ci);

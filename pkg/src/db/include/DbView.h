@@ -17,22 +17,34 @@
  * along with LDExplorer.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ALGORITHMMIGPP_H_
-#define ALGORITHMMIGPP_H_
+#ifndef DBVIEW_H_
+#define DBVIEW_H_
 
-#include "Algorithm.h"
+#include <stdlib.h>
 
 using namespace std;
 
-class AlgorithmMIGPP: public Algorithm {
+class DbView {
+private:
+	DbView();
 
 public:
-	AlgorithmMIGPP(const DbView* db);
-	virtual ~AlgorithmMIGPP();
+	unsigned int n_unfiltered_markers;
 
-	void compute_preliminary_blocks(const char* ci_method, unsigned int ci_precision, unsigned int window) throw (Exception);
+	unsigned int n_haplotypes;
+	unsigned int n_markers;
+	char** markers;
+	unsigned long int* positions;
+	char* major_alleles;
+	char* minor_alleles;
+	double* major_allele_freqs;
+	char** haplotypes;
+
+	virtual ~DbView();
 
 	double get_memory_usage();
+
+	friend class Db;
 };
 
 #endif

@@ -20,14 +20,14 @@
 #ifndef ALGORITHMCI_H_
 #define ALGORITHMCI_H_
 
-#include "../../db/include/Db.h"
+#include "../../db/include/DbView.h"
 #include "../../writer/include/WriterFactory.h"
 
 using namespace std;
 
 class CI {
 protected:
-	Db* db;
+	const DbView* db;
 
 	char* observed_haplotype_a;
 	char* observed_haplotype_b;
@@ -54,7 +54,7 @@ protected:
 public:
 	static const double EPSILON;
 
-	CI(Db& db);
+	CI(const DbView* db);
 	virtual ~CI();
 
 	double get_D(unsigned int marker_a, unsigned int marker_b);

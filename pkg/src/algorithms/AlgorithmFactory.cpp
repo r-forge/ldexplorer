@@ -31,7 +31,7 @@ AlgorithmFactory::~AlgorithmFactory() {
 
 }
 
-Algorithm* AlgorithmFactory::create(Db& db, const char* name) throw (Exception) {
+Algorithm* AlgorithmFactory::create(const DbView* db, const char* name) throw (Exception) {
 	if (auxiliary::strcmp_ignore_case(name, ALGORITHM_MIG) == 0) {
 		return new AlgorithmMIG(db);
 	} else if (auxiliary::strcmp_ignore_case(name, ALGORITHM_MIGP) == 0) {

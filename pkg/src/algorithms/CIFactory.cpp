@@ -31,7 +31,7 @@ CIFactory::~CIFactory() {
 
 }
 
-CI* CIFactory::create(Db& db, const char* method, unsigned int precision) throw (Exception) {
+CI* CIFactory::create(const DbView* db, const char* method, unsigned int precision) throw (Exception) {
 	if (auxiliary::strcmp_ignore_case(method, NONE) == 0) {
 		return new CI(db);
 	} else if (auxiliary::strcmp_ignore_case(method, CI_WP) == 0) {

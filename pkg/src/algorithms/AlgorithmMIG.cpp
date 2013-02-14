@@ -19,7 +19,7 @@
 
 #include "include/AlgorithmMIG.h"
 
-AlgorithmMIG::AlgorithmMIG(Db& db) : Algorithm(db) {
+AlgorithmMIG::AlgorithmMIG(const DbView* db) : Algorithm(db) {
 
 }
 
@@ -38,7 +38,7 @@ void AlgorithmMIG::compute_preliminary_blocks(const char* ci_method, unsigned in
 
 	pair* new_strong_pairs = NULL;
 
-	ci = CIFactory::create(*db, ci_method, ci_precision);
+	ci = CIFactory::create(db, ci_method, ci_precision);
 
 	w_values = (long double*)malloc(db->n_markers * sizeof(long double));
 	if (w_values == NULL) {

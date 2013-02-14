@@ -19,7 +19,7 @@
 
 #include "include/AlgorithmMIGP.h"
 
-AlgorithmMIGP::AlgorithmMIGP(Db& db) : Algorithm(db) {
+AlgorithmMIGP::AlgorithmMIGP(const DbView* db) : Algorithm(db) {
 
 }
 
@@ -43,7 +43,7 @@ void AlgorithmMIGP::compute_preliminary_blocks(const char* ci_method, unsigned i
 
 	pair* new_strong_pairs = NULL;
 
-	ci = CIFactory::create(*db, ci_method, ci_precision);
+	ci = CIFactory::create(db, ci_method, ci_precision);
 
 	w_values = (long double*)malloc(db->n_markers * sizeof(long double));
 	if (w_values == NULL) {
