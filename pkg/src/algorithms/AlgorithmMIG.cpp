@@ -19,7 +19,7 @@
 
 #include "include/AlgorithmMIG.h"
 
-AlgorithmMIG::AlgorithmMIG(const DbView* db) : Algorithm(db) {
+AlgorithmMIG::AlgorithmMIG() : Algorithm() {
 
 }
 

@@ -19,7 +19,7 @@
 
 #include "include/CIAV.h"
 
-CIAV::CIAV() :
+CIAV::CIAV() : CI(),
 	var_d(0.0),
 	dmax_first(0.0), dmax_second(0.0), dmax(0.0),
 	f(0.0),

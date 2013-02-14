@@ -19,7 +19,7 @@
 
 #include "include/AlgorithmMIGP.h"
 
-AlgorithmMIGP::AlgorithmMIGP(const DbView* db) : Algorithm(db) {
+AlgorithmMIGP::AlgorithmMIGP() : Algorithm() {
 
 }
 

@@ -27,7 +27,7 @@ using namespace std;
 class AlgorithmMIG: public Algorithm {
 
 public:
-	AlgorithmMIG(const DbView* db);
+	AlgorithmMIG();
 	virtual ~AlgorithmMIG();
 
 	void compute_preliminary_blocks(const char* ci_method, unsigned int likelihood_density = 0u) throw (Exception);

@@ -44,6 +44,8 @@ protected:
 		unsigned long int distance;
 	};
 
+	const DbView* db;
+
 	double pos_strong_pair_cl;
 	double neg_strong_pair_cl;
 	double pos_strong_pair_cu;
@@ -53,8 +55,6 @@ protected:
 	double strong_pairs_fraction;
 	double strong_pair_weight;
 	double recomb_pair_weight;
-
-	const DbView* db;
 
 	pair* strong_pairs;
 	unsigned int n_strong_pairs;
@@ -73,8 +73,10 @@ protected:
 public:
 	static const double EPSILON;
 
-	Algorithm(const DbView* db) throw (Exception);
+	Algorithm() throw (Exception);
 	virtual ~Algorithm();
+
+	void set_dbview(const DbView* db);
 
 	void set_strong_pair_cl(double ci_lower_bound);
 	void set_strong_pair_cu(double ci_upper_bound);

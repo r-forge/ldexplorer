@@ -36,7 +36,7 @@ public:
 	AlgorithmFactory();
 	virtual ~AlgorithmFactory();
 
-	static Algorithm* create(const DbView* db, const char* name, unsigned int window = 0u) throw (Exception);
+	static Algorithm* create(const char* name, unsigned int window = 0u) throw (Exception);
 };
 
 #endif

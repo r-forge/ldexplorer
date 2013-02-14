@@ -19,7 +19,7 @@
 
 #include "include/AlgorithmMIGPP.h"
 
-AlgorithmMIGPP::AlgorithmMIGPP(const DbView* db, unsigned int window) : Algorithm(db), window(window) {
+AlgorithmMIGPP::AlgorithmMIGPP(unsigned int window) : Algorithm(), window(window) {
 
 }
 

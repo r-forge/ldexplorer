@@ -31,13 +31,13 @@ AlgorithmFactory::~AlgorithmFactory() {
 
 }
 
-Algorithm* AlgorithmFactory::create(const DbView* db, const char* name, unsigned int window) throw (Exception) {
+Algorithm* AlgorithmFactory::create(const char* name, unsigned int window) throw (Exception) {
 	if (auxiliary::strcmp_ignore_case(name, ALGORITHM_MIG) == 0) {
-		return new AlgorithmMIG(db);
+		return new AlgorithmMIG();
 	} else if (auxiliary::strcmp_ignore_case(name, ALGORITHM_MIGP) == 0) {
-		return new AlgorithmMIGP(db);
+		return new AlgorithmMIGP();
 	} else if (auxiliary::strcmp_ignore_case(name, ALGORITHM_MIGPP) == 0) {
-		return new AlgorithmMIGPP(db, window);
+		return new AlgorithmMIGPP(window);
 	} else {
 		throw Exception(__FILE__, __LINE__, "Unknown algorithm '%s' was specified.", name);
 	}

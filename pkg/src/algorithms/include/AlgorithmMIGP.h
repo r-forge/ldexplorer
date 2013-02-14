@@ -27,7 +27,7 @@ using namespace std;
 class AlgorithmMIGP: public Algorithm {
 
 public:
-	AlgorithmMIGP(const DbView* db);
+	AlgorithmMIGP();
 	virtual ~AlgorithmMIGP();
 
 	void compute_preliminary_blocks(const char* ci_method, unsigned int likelihood_density = 0u) throw (Exception);

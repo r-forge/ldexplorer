@@ -26,12 +26,12 @@ const unsigned int Algorithm::BLOCKS_SIZE_INCREMENT = 1000;
 
 const double Algorithm::EPSILON = 0.000000001;
 
-Algorithm::Algorithm(const DbView* db) throw (Exception) :
+Algorithm::Algorithm() throw (Exception) :
+		db(NULL),
 		pos_strong_pair_cl(0.7), neg_strong_pair_cl(-0.7),
 		pos_strong_pair_cu(0.98), neg_strong_pair_cu(-0.98),
 		pos_recomb_pair_cu(0.9), neg_recomb_pair_cu(0.9),
 		strong_pairs_fraction(0.95), strong_pair_weight(0.05), recomb_pair_weight(0.95),
-		db(db),
 		strong_pairs(NULL), n_strong_pairs(0u), strong_pairs_size(STRONG_PAIRS_SIZE_INIT),
 		blocks(NULL), n_blocks(0u), blocks_size(BLOCKS_SIZE_INIT) {
 
@@ -54,6 +54,10 @@ Algorithm::~Algorithm() {
 
 	free(blocks);
 	blocks = NULL;
+}
+
+void Algorithm::set_dbview(const DbView* db) {
+	this->db = db;
 }
 
 void Algorithm::set_strong_pair_cl(double ci_lower_bound) {

@@ -477,7 +477,9 @@ extern "C" {
 				Rprintf("NA\n", c.window);
 			}
 
-			algorithm = AlgorithmFactory::create(dbview, c.pruning_method, c.window);
+			algorithm = AlgorithmFactory::create(c.pruning_method, c.window);
+
+			algorithm->set_dbview(dbview);
 
 			algorithm->set_strong_pair_cl(c.ld_ci[0]);
 			algorithm->set_strong_pair_cu(c.ld_ci[1]);

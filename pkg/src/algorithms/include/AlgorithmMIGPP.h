@@ -29,7 +29,7 @@ private:
 	unsigned int window;
 
 public:
-	AlgorithmMIGPP(const DbView* db, unsigned int window);
+	AlgorithmMIGPP(unsigned int window);
 	virtual ~AlgorithmMIGPP();
 
 	void compute_preliminary_blocks(const char* ci_method, unsigned int likelihood_density = 0u) throw (Exception);
