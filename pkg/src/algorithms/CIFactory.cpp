@@ -31,13 +31,13 @@ CIFactory::~CIFactory() {
 
 }
 
-CI* CIFactory::create(const DbView* db, const char* method, unsigned int precision) throw (Exception) {
+CI* CIFactory::create(const char* method, unsigned int likelihood_density) throw (Exception) {
 	if (auxiliary::strcmp_ignore_case(method, NONE) == 0) {
-		return new CI(db);
+		return new CI();
 	} else if (auxiliary::strcmp_ignore_case(method, CI_WP) == 0) {
-		return new CIWP(db, precision);
+		return new CIWP(likelihood_density);
 	} else if (auxiliary::strcmp_ignore_case(method, CI_AV) == 0) {
-		return new CIAV(db);
+		return new CIAV();
 	} else {
 		throw Exception(__FILE__, __LINE__, "Unknown D' CI computation method '%s' was specified.", method);
 	}

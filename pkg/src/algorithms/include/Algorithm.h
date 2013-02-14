@@ -71,10 +71,6 @@ protected:
 	static int paircmp(const void* first, const void* second);
 
 public:
-	struct info {
-
-	};
-
 	static const double EPSILON;
 
 	Algorithm(const DbView* db) throw (Exception);
@@ -85,16 +81,13 @@ public:
 	void set_recomb_pair_cu(double ci_upper_bound);
 	void set_strong_pairs_fraction(double fraction);
 
-	virtual void compute_preliminary_blocks(const char* ci_method, unsigned int ci_precision, unsigned int window) throw (Exception) = 0;
+	virtual void compute_preliminary_blocks(const char* ci_method, unsigned int likelihood_density = 0u) throw (Exception) = 0;
 
 	void sort_preliminary_blocks();
 	void select_final_blocks() throw (Exception);
 
 	unsigned int get_n_strong_pairs();
 	unsigned int get_n_blocks();
-
-//	void write_blocks(const char* output_file_name, const char* input_phase_file_name, const char* input_map_file_name,
-//			double maf_threshold, bool region, unsigned long int start, unsigned long int end, const char* ci_method) throw (Exception);
 
 	void write_blocks(const char* output_file_name) throw (Exception);
 

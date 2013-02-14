@@ -19,8 +19,8 @@
 
 #include "include/CIWP.h"
 
-CIWP::CIWP(const DbView* db, unsigned int precision) throw (Exception) : CI(db),
-		generation_number(precision),
+CIWP::CIWP(unsigned int likelihood_density) throw (Exception) :
+		generation_number(likelihood_density),
 		generated_dprime(NULL),
 		generated_freq_haplotype_ref_a_ref_b(0.0), generated_freq_haplotype_ref_a_alt_b(0.0), generated_freq_haplotype_alt_a_ref_b(0.0), generated_freq_haplotype_alt_a_alt_b(0.0),
 		log_likelihood(NULL), max_log_likelihood(0.0),

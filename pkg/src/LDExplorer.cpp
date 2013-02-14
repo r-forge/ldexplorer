@@ -430,6 +430,9 @@ extern "C" {
 			Rprintf("Loading data...\n");
 			start_time = clock();
 
+			db.load(c.phase_file, c.map_file, c.region[0], c.region[1], c.phase_file_format);
+			dbview = db.create_view(c.maf, c.region[0], c.region[1]);
+
 			Rprintf("\tPhase file: %s\n", c.phase_file);
 			Rprintf("\tMap file: %s\n", c.map_file == NULL ? "NA" : c.map_file);
 			if ((c.region[0] > 0) || (c.region[1] != numeric_limits<long int>::max())) {
@@ -438,18 +441,9 @@ extern "C" {
 				Rprintf("\tRegion: NA\n");
 			}
 			Rprintf("\tMAF filter: > %g\n", c.maf);
-
-			db.load(c.phase_file, c.map_file, c.region[0], c.region[1], c.phase_file_format);
-			dbview = db.create_view(c.maf, 0u, numeric_limits<long int>::max());
-
-			c.all_snps = dbview->n_unfiltered_markers;
-			c.filtered_snps = dbview->n_markers;
-			c.haplotypes = dbview->n_haplotypes;
-
-
-			Rprintf("\tAll SNPs: %u\n", c.all_snps);
-			Rprintf("\tFiltered SNPs: %u\n", c.filtered_snps);
-			Rprintf("\tHaplotypes: %u\n", c.haplotypes);
+			Rprintf("\tAll SNPs: %u\n", dbview->n_unfiltered_markers);
+			Rprintf("\tFiltered SNPs: %u\n", dbview->n_markers);
+			Rprintf("\tHaplotypes: %u\n", dbview->n_haplotypes);
 			Rprintf("\tUsed memory (Mb): %.3f\n", db.get_memory_usage());
 
 			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
@@ -483,7 +477,7 @@ extern "C" {
 				Rprintf("NA\n", c.window);
 			}
 
-			algorithm = AlgorithmFactory::create(dbview, c.pruning_method);
+			algorithm = AlgorithmFactory::create(dbview, c.pruning_method, c.window);
 
 			algorithm->set_strong_pair_cl(c.ld_ci[0]);
 			algorithm->set_strong_pair_cu(c.ld_ci[1]);
@@ -496,7 +490,7 @@ extern "C" {
 			Rprintf("Processing data...\n");
 			start_time = clock();
 
-			algorithm->compute_preliminary_blocks(c.ci_method, c.l_density, c.window);
+			algorithm->compute_preliminary_blocks(c.ci_method, c.l_density);
 			Rprintf("\tPreliminary haplotype blocks: %u\n", algorithm->get_n_strong_pairs());
 
 			algorithm->sort_preliminary_blocks();

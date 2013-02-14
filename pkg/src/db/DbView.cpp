@@ -19,7 +19,9 @@
 
 #include "include/DbView.h"
 
-DbView::DbView() : n_unfiltered_markers(0u), n_haplotypes(0u), n_markers(0u), markers(NULL), positions(NULL),
+DbView::DbView(double maf_threshold, unsigned long int start_position, unsigned long int end_position) :
+	maf_threshold(maf_threshold), start_position(start_position), end_position(end_position),
+	n_unfiltered_markers(0u), n_haplotypes(0u), n_markers(0u), markers(NULL), positions(NULL),
 	major_alleles(NULL), minor_alleles(NULL), major_allele_freqs(NULL), haplotypes(NULL) {
 
 }

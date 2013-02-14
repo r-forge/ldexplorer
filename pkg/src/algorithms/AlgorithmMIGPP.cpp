@@ -19,7 +19,7 @@
 
 #include "include/AlgorithmMIGPP.h"
 
-AlgorithmMIGPP::AlgorithmMIGPP(const DbView* db) : Algorithm(db) {
+AlgorithmMIGPP::AlgorithmMIGPP(const DbView* db, unsigned int window) : Algorithm(db), window(window) {
 
 }
 
@@ -27,7 +27,7 @@ AlgorithmMIGPP::~AlgorithmMIGPP() {
 
 }
 
-void AlgorithmMIGPP::compute_preliminary_blocks(const char* ci_method, unsigned int ci_precision, unsigned int window) throw (Exception) {
+void AlgorithmMIGPP::compute_preliminary_blocks(const char* ci_method, unsigned int likelihood_density) throw (Exception) {
 	CI* ci = NULL;
 
 	long double* w_values = NULL;
@@ -54,7 +54,8 @@ void AlgorithmMIGPP::compute_preliminary_blocks(const char* ci_method, unsigned 
 
 	pair* new_strong_pairs = NULL;
 
-	ci = CIFactory::create(db, ci_method, ci_precision);
+	ci = CIFactory::create(ci_method, likelihood_density);
+	ci->set_dbview(db);
 
 	w_values = (long double*)malloc(db->n_markers * sizeof(long double));
 	if (w_values == NULL) {

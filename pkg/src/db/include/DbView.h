@@ -26,9 +26,13 @@ using namespace std;
 
 class DbView {
 private:
-	DbView();
+	DbView(double maf_threshold, unsigned long int start_position, unsigned long int end_position);
 
 public:
+	double maf_threshold;
+	unsigned long int start_position;
+	unsigned long int end_position;
+
 	unsigned int n_unfiltered_markers;
 
 	unsigned int n_haplotypes;

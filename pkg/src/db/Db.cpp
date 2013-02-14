@@ -1315,7 +1315,7 @@ const DbView* Db::create_view(double maf_threshold, unsigned long int start_posi
 		return NULL;
 	}
 
-	view = new DbView();
+	view = new DbView(maf_threshold, start_position, end_position);
 
 	views.push_back(view);
 

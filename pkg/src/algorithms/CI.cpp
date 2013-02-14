@@ -21,8 +21,8 @@
 
 const double CI::EPSILON = 0.000000001;
 
-CI::CI(const DbView* db) :
-		db(db),
+CI::CI() :
+		db(NULL),
 		observed_haplotype_a(NULL), observed_haplotype_b(NULL),
 		n_observed_haplotype_ref_a_ref_b(0u), n_observed_haplotype_ref_a_alt_b(0u), n_observed_haplotype_alt_a_ref_b(0u), n_observed_haplotype_alt_a_alt_b(0u),
 		observed_allele_a('\0'), observed_allele_b('\0'),
@@ -34,6 +34,10 @@ CI::CI(const DbView* db) :
 
 CI::~CI() {
 	db = NULL;
+}
+
+void CI::set_dbview(const DbView* db) {
+	this->db = db;
 }
 
 double CI::get_D(unsigned int marker_a, unsigned int marker_b) {

@@ -35,7 +35,7 @@ public:
 	CIFactory();
 	virtual ~CIFactory();
 
-	static CI* create(const DbView* db, const char* method, unsigned int precision = 0u) throw (Exception);
+	static CI* create(const char* method, unsigned int likelihood_density = 0u) throw (Exception);
 };
 
 #endif

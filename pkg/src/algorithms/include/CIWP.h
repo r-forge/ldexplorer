@@ -46,7 +46,7 @@ private:
 	double dmax;
 
 public:
-	CIWP(const DbView* db, unsigned int precision) throw (Exception);
+	CIWP(unsigned int likelihood_density) throw (Exception);
 	virtual ~CIWP();
 
 	void get_CI(unsigned int marker_a, unsigned int marker_b, double* dprime_lower_ci, double* dprime_upper_ci);

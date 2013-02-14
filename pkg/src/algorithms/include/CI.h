@@ -54,8 +54,10 @@ protected:
 public:
 	static const double EPSILON;
 
-	CI(const DbView* db);
+	CI();
 	virtual ~CI();
+
+	void set_dbview(const DbView* db);
 
 	double get_D(unsigned int marker_a, unsigned int marker_b);
 	double get_Dprime(unsigned int marker_a, unsigned int marker_b);

@@ -25,12 +25,14 @@
 using namespace std;
 
 class AlgorithmMIGPP: public Algorithm {
+private:
+	unsigned int window;
 
 public:
-	AlgorithmMIGPP(const DbView* db);
+	AlgorithmMIGPP(const DbView* db, unsigned int window);
 	virtual ~AlgorithmMIGPP();
 
-	void compute_preliminary_blocks(const char* ci_method, unsigned int ci_precision, unsigned int window) throw (Exception);
+	void compute_preliminary_blocks(const char* ci_method, unsigned int likelihood_density = 0u) throw (Exception);
 
 	double get_memory_usage();
 };
