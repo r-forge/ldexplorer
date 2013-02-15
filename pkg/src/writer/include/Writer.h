@@ -33,6 +33,9 @@ protected:
 	Writer();
 
 public:
+	static const char* TEXT;
+	static const char* GZIP;
+
 	virtual ~Writer();
 
 	void set_file_name(const char* file_name) throw (Exception);

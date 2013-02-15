@@ -27,7 +27,7 @@ AlgorithmMIGP::~AlgorithmMIGP() {
 
 }
 
-void AlgorithmMIGP::compute_preliminary_blocks(const char* ci_method, unsigned int likelihood_density) throw (Exception) {
+void AlgorithmMIGP::compute_preliminary_blocks() throw (Exception) {
 	CI* ci = NULL;
 
 	long double* w_values = NULL;
@@ -41,7 +41,9 @@ void AlgorithmMIGP::compute_preliminary_blocks(const char* ci_method, unsigned i
 	long int breakpoint = 0;
 	long int updated_breakpoint = 0;
 
-	pair* new_strong_pairs = NULL;
+	preliminary_block* new_strong_pairs = NULL;
+
+	n_preliminary_blocks = 0u;
 
 	ci = CIFactory::create(ci_method, likelihood_density);
 	ci->set_dbview(db);
@@ -67,9 +69,9 @@ void AlgorithmMIGP::compute_preliminary_blocks(const char* ci_method, unsigned i
 					w_values_sum += strong_pair_weight;
 					w_values[j] += w_values_sum;
 					if (auxiliary::fcmp(w_values[j], 0.0, EPSILON) >= 0) {
-						if (n_strong_pairs >= strong_pairs_size) {
-							strong_pairs_size += STRONG_PAIRS_SIZE_INCREMENT;
-							new_strong_pairs = (pair*)realloc(strong_pairs, strong_pairs_size * sizeof(pair));
+						if (n_preliminary_blocks >= preliminary_blocks_size) {
+							preliminary_blocks_size += PRELIMINARY_BLOCKS_SIZE_INCREMENT;
+							new_strong_pairs = (preliminary_block*)realloc(preliminary_blocks, preliminary_blocks_size * sizeof(preliminary_block));
 							if (new_strong_pairs == NULL) {
 								delete ci;
 								ci = NULL;
@@ -79,15 +81,15 @@ void AlgorithmMIGP::compute_preliminary_blocks(const char* ci_method, unsigned i
 
 								throw Exception(__FILE__, __LINE__, "Error in memory reallocation.");
 							}
-							strong_pairs = new_strong_pairs;
+							preliminary_blocks = new_strong_pairs;
 							new_strong_pairs = NULL;
 						}
 
-						strong_pairs[n_strong_pairs].first = j;
-						strong_pairs[n_strong_pairs].last = i;
-						strong_pairs[n_strong_pairs].distance = db->positions[i] - db->positions[j];
+						preliminary_blocks[n_preliminary_blocks].start = j;
+						preliminary_blocks[n_preliminary_blocks].end = i;
+						preliminary_blocks[n_preliminary_blocks].length_bp = db->positions[i] - db->positions[j];
 
-						++n_strong_pairs;
+						++n_preliminary_blocks;
 					}
 				} else if ((auxiliary::fcmp(lower_ci, neg_recomb_pair_cu, EPSILON) >= 0) && (auxiliary::fcmp(upper_ci, pos_recomb_pair_cu, EPSILON) <= 0)) {
 					w_values_sum -= recomb_pair_weight;
@@ -111,6 +113,15 @@ void AlgorithmMIGP::compute_preliminary_blocks(const char* ci_method, unsigned i
 
 	free(w_values);
 	w_values = NULL;
+}
+
+Partition* AlgorithmMIGP::get_block_partition() throw (Exception) {
+	Partition* partition = Algorithm::get_block_partition();
+
+	partition->pruning_method = Algorithm::ALGORITHM_MIGP;
+	partition->window = 0u;
+
+	return partition;
 }
 
 double AlgorithmMIGP::get_memory_usage() {

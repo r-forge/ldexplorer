@@ -19,6 +19,10 @@
 
 #include "include/CI.h"
 
+const char* CI::NONE = "NONE";
+const char* CI::CI_WP = "WP";
+const char* CI::CI_AV = "AV";
+
 const double CI::EPSILON = 0.000000001;
 
 CI::CI() :

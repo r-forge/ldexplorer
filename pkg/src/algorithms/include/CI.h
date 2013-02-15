@@ -52,6 +52,10 @@ protected:
 	double observed_d;
 
 public:
+	static const char* NONE;
+	static const char* CI_WP;
+	static const char* CI_AV;
+
 	static const double EPSILON;
 
 	CI();

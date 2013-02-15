@@ -29,6 +29,9 @@ private:
 	DbView(double maf_threshold, unsigned long int start_position, unsigned long int end_position);
 
 public:
+	const char* hap_file_name;
+	const char* map_file_name;
+
 	double maf_threshold;
 	unsigned long int start_position;
 	unsigned long int end_position;

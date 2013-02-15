@@ -57,7 +57,8 @@ const unsigned int Db::HEAP_INCREMENT = 100000;
 
 const double Db::EPSILON = 0.000000001;
 
-Db::Db() throw (Exception): n_haplotypes(0u), all_n_markers(0u), all_markers(NULL), all_positions(NULL),
+Db::Db() throw (Exception): hap_file_name(NULL), map_file_name(NULL),
+		n_haplotypes(0u), all_n_markers(0u), all_markers(NULL), all_positions(NULL),
 		all_major_alleles(NULL), all_minor_alleles(), all_major_allele_freqs(NULL), all_haplotypes(NULL),
 		current_heap_size(HEAP_SIZE) {
 
@@ -243,12 +244,18 @@ void Db::reallocate() throw (Exception) {
 
 void Db::load(const char* hap_file_name, const char* map_file_name, unsigned long int start_position, unsigned long int end_position, const char* type) throw (Exception) {
 	if (auxiliary::strcmp_ignore_case(type, VCF) == 0) {
+		this->hap_file_name = hap_file_name;
+		this->map_file_name = NULL;
+
 		if ((start_position != 0u) || (end_position != numeric_limits<unsigned long int>::max())) {
 			load_vcf(hap_file_name, start_position, end_position);
 		} else {
 			load_vcf(hap_file_name);
 		}
 	} else if (auxiliary::strcmp_ignore_case(type, HAPMAP2) == 0) {
+		this->hap_file_name = hap_file_name;
+		this->map_file_name = map_file_name;
+
 		if ((start_position != 0u) || (end_position != numeric_limits<unsigned long int>::max())) {
 			load_hapmap2(map_file_name, hap_file_name, start_position, end_position);
 		} else {
@@ -1318,6 +1325,9 @@ const DbView* Db::create_view(double maf_threshold, unsigned long int start_posi
 	view = new DbView(maf_threshold, start_position, end_position);
 
 	views.push_back(view);
+
+	view->hap_file_name = hap_file_name;
+	view->map_file_name = map_file_name;
 
 	view->n_haplotypes = n_haplotypes;
 

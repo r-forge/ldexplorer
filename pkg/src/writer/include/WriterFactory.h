@@ -31,9 +31,6 @@ private:
 	WriterFactory();
 
 public:
-	static const char* TEXT;
-	static const char* GZIP;
-
 	virtual ~WriterFactory();
 
 	static Writer* create(const char* type) throw (Exception);

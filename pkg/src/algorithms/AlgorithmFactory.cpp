@@ -19,10 +19,6 @@
 
 #include "include/AlgorithmFactory.h"
 
-const char* AlgorithmFactory::ALGORITHM_MIG = "MIG";
-const char* AlgorithmFactory::ALGORITHM_MIGP = "MIG+";
-const char* AlgorithmFactory::ALGORITHM_MIGPP = "MIG++";
-
 AlgorithmFactory::AlgorithmFactory() {
 
 }
@@ -32,11 +28,11 @@ AlgorithmFactory::~AlgorithmFactory() {
 }
 
 Algorithm* AlgorithmFactory::create(const char* name, unsigned int window) throw (Exception) {
-	if (auxiliary::strcmp_ignore_case(name, ALGORITHM_MIG) == 0) {
+	if (auxiliary::strcmp_ignore_case(name, Algorithm::ALGORITHM_MIG) == 0) {
 		return new AlgorithmMIG();
-	} else if (auxiliary::strcmp_ignore_case(name, ALGORITHM_MIGP) == 0) {
+	} else if (auxiliary::strcmp_ignore_case(name, Algorithm::ALGORITHM_MIGP) == 0) {
 		return new AlgorithmMIGP();
-	} else if (auxiliary::strcmp_ignore_case(name, ALGORITHM_MIGPP) == 0) {
+	} else if (auxiliary::strcmp_ignore_case(name, Algorithm::ALGORITHM_MIGPP) == 0) {
 		return new AlgorithmMIGPP(window);
 	} else {
 		throw Exception(__FILE__, __LINE__, "Unknown algorithm '%s' was specified.", name);

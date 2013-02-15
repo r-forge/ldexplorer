@@ -20,57 +20,57 @@
 #ifndef ALGORITHM_H_
 #define ALGORITHM_H_
 
-#include <map>
-#include <vector>
 #include <math.h>
 
 #include "../../auxiliary/include/auxiliary.h"
 #include "../../db/include/DbView.h"
 #include "../../writer/include/WriterFactory.h"
 #include "CIFactory.h"
+#include "Partition.h"
 
 using namespace std;
 
 class Algorithm {
 protected:
-	static const unsigned int STRONG_PAIRS_SIZE_INIT;
-	static const unsigned int STRONG_PAIRS_SIZE_INCREMENT;
-	static const unsigned int BLOCKS_SIZE_INIT;
-	static const unsigned int BLOCKS_SIZE_INCREMENT;
+	static const unsigned int PRELIMINARY_BLOCKS_SIZE_INIT;
+	static const unsigned int PRELIMINARY_BLOCKS_SIZE_INCREMENT;
 
-	struct pair {
-		unsigned int first;
-		unsigned int last;
-		unsigned long int distance;
+	struct preliminary_block {
+		unsigned int start;
+		unsigned int end;
+		unsigned long int length_bp;
 	};
 
 	const DbView* db;
 
+	const char* ci_method;
+	unsigned int likelihood_density;
+
 	double pos_strong_pair_cl;
 	double neg_strong_pair_cl;
+
 	double pos_strong_pair_cu;
 	double neg_strong_pair_cu;
+
 	double pos_recomb_pair_cu;
 	double neg_recomb_pair_cu;
+
 	double strong_pairs_fraction;
+
 	double strong_pair_weight;
 	double recomb_pair_weight;
 
-	pair* strong_pairs;
-	unsigned int n_strong_pairs;
-	unsigned int strong_pairs_size;
+	preliminary_block* preliminary_blocks;
+	unsigned int n_preliminary_blocks;
+	unsigned int preliminary_blocks_size;
 
-	unsigned int* blocks;
-	unsigned int n_blocks;
-	unsigned int blocks_size;
-
-	bool is_compatible_haplotype(const char* first, const char* second);
-	void get_block_diversity(unsigned int block_id,
-			unsigned int* n_haps, unsigned int* n_unique_haps, unsigned int* n_common_haps, double* haps_diversity) throw (Exception);
-
-	static int paircmp(const void* first, const void* second);
+	static int preliminary_blocks_cmp(const void* first, const void* second);
 
 public:
+	static const char* ALGORITHM_MIG;
+	static const char* ALGORITHM_MIGP;
+	static const char* ALGORITHM_MIGPP;
+
 	static const double EPSILON;
 
 	Algorithm() throw (Exception);
@@ -78,25 +78,21 @@ public:
 
 	void set_dbview(const DbView* db);
 
+	void set_ci_method(const char* ci_method);
+	void set_likelihood_density(unsigned int likelihood_density);
 	void set_strong_pair_cl(double ci_lower_bound);
 	void set_strong_pair_cu(double ci_upper_bound);
 	void set_recomb_pair_cu(double ci_upper_bound);
 	void set_strong_pairs_fraction(double fraction);
 
-	virtual void compute_preliminary_blocks(const char* ci_method, unsigned int likelihood_density = 0u) throw (Exception) = 0;
-
+	virtual void compute_preliminary_blocks() throw (Exception) = 0;
+	unsigned int get_n_preliminary_blocks();
 	void sort_preliminary_blocks();
-	void select_final_blocks() throw (Exception);
 
-	unsigned int get_n_strong_pairs();
-	unsigned int get_n_blocks();
-
-	void write_blocks(const char* output_file_name) throw (Exception);
+	virtual Partition* get_block_partition() throw (Exception);
 
 	double get_memory_usage_preliminary_blocks();
-	double get_memory_usage_final_blocks();
 	virtual double get_memory_usage();
-	double get_total_memory_usage();
 };
 
 #endif

@@ -165,7 +165,9 @@
     # run mig() function on 1000 Genomes Project CEU data with default arguments.
     mig(
      phase_file = "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.vcf.gz", 
-     output_file = "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks.txt"
+     output_file = "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks.txt",
+     pruning_method = "MIG+",
+     ci_method = "AV"
     )
 	
     # show contents of the input script

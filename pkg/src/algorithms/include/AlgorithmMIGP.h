@@ -30,7 +30,9 @@ public:
 	AlgorithmMIGP();
 	virtual ~AlgorithmMIGP();
 
-	void compute_preliminary_blocks(const char* ci_method, unsigned int likelihood_density = 0u) throw (Exception);
+	void compute_preliminary_blocks() throw (Exception);
+
+	Partition* get_block_partition() throw (Exception);
 
 	double get_memory_usage();
 };

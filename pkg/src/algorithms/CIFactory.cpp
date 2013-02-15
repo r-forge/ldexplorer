@@ -19,10 +19,6 @@
 
 #include "include/CIFactory.h"
 
-const char* CIFactory::NONE = "NONE";
-const char* CIFactory::CI_WP = "WP";
-const char* CIFactory::CI_AV = "AV";
-
 CIFactory::CIFactory() {
 
 }
@@ -32,11 +28,11 @@ CIFactory::~CIFactory() {
 }
 
 CI* CIFactory::create(const char* method, unsigned int likelihood_density) throw (Exception) {
-	if (auxiliary::strcmp_ignore_case(method, NONE) == 0) {
+	if (auxiliary::strcmp_ignore_case(method, CI::NONE) == 0) {
 		return new CI();
-	} else if (auxiliary::strcmp_ignore_case(method, CI_WP) == 0) {
+	} else if (auxiliary::strcmp_ignore_case(method, CI::CI_WP) == 0) {
 		return new CIWP(likelihood_density);
-	} else if (auxiliary::strcmp_ignore_case(method, CI_AV) == 0) {
+	} else if (auxiliary::strcmp_ignore_case(method, CI::CI_AV) == 0) {
 		return new CIAV();
 	} else {
 		throw Exception(__FILE__, __LINE__, "Unknown D' CI computation method '%s' was specified.", method);

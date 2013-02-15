@@ -58,6 +58,9 @@ private:
 	static const unsigned int HAPMAP2_MAP_MANDATORY_COLUMNS_SIZE;
 	static const char* hapmap2_map_mandatory_columns[];
 
+	const char* hap_file_name;
+	const char* map_file_name;
+
 	unsigned int n_haplotypes;
 
 	unsigned int all_n_markers;

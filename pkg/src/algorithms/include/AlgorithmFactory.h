@@ -29,10 +29,6 @@
 
 class AlgorithmFactory {
 public:
-	static const char* ALGORITHM_MIG;
-	static const char* ALGORITHM_MIGP;
-	static const char* ALGORITHM_MIGPP;
-
 	AlgorithmFactory();
 	virtual ~AlgorithmFactory();
 

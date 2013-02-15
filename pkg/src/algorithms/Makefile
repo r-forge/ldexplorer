@@ -19,7 +19,7 @@
 
 include $(R_MAKECONF)
 
-applib:	CI.o CIWP.o CIAV.o CIFactory.o Algorithm.o AlgorithmMIG.o AlgorithmMIGP.o AlgorithmMIGPP.o AlgorithmFactory.o
+applib:	CI.o CIWP.o CIAV.o CIFactory.o Algorithm.o AlgorithmMIG.o AlgorithmMIGP.o AlgorithmMIGPP.o AlgorithmFactory.o Partition.o
 
 clean:  
 	@-rm -f *.o

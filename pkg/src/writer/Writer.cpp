@@ -19,6 +19,9 @@
 
 #include "include/Writer.h"
 
+const char* Writer::TEXT = "TEXT";
+const char* Writer::GZIP = "GZIP";
+
 Writer::Writer() : file_name(NULL) {
 
 }
