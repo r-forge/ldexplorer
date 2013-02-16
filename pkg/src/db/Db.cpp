@@ -242,31 +242,33 @@ void Db::reallocate() throw (Exception) {
 	current_heap_size = new_heap_size;
 }
 
-void Db::load(const char* hap_file_name, const char* map_file_name, unsigned long int start_position, unsigned long int end_position, const char* type) throw (Exception) {
-	if (auxiliary::strcmp_ignore_case(type, VCF) == 0) {
-		this->hap_file_name = hap_file_name;
-		this->map_file_name = NULL;
+void Db::set_hap_file(const char* hap_file_name) {
+	this->hap_file_name = hap_file_name;
+}
 
+void Db::set_map_file(const char* map_file_name) {
+	this->map_file_name = map_file_name;
+}
+
+void Db::load(unsigned long int start_position, unsigned long int end_position, const char* type) throw (Exception) {
+	if (auxiliary::strcmp_ignore_case(type, VCF) == 0) {
 		if ((start_position != 0u) || (end_position != numeric_limits<unsigned long int>::max())) {
-			load_vcf(hap_file_name, start_position, end_position);
+			load_vcf(start_position, end_position);
 		} else {
-			load_vcf(hap_file_name);
+			load_vcf();
 		}
 	} else if (auxiliary::strcmp_ignore_case(type, HAPMAP2) == 0) {
-		this->hap_file_name = hap_file_name;
-		this->map_file_name = map_file_name;
-
 		if ((start_position != 0u) || (end_position != numeric_limits<unsigned long int>::max())) {
-			load_hapmap2(map_file_name, hap_file_name, start_position, end_position);
+			load_hapmap2(start_position, end_position);
 		} else {
-			load_hapmap2(map_file_name, hap_file_name);
+			load_hapmap2();
 		}
 	} else {
 		throw Exception(__FILE__, __LINE__, "Unknown file type '%s' was specified.", type);
 	}
 }
 
-void Db::load_vcf(const char* file_name, unsigned long int start_position, unsigned long int end_position) throw (Exception) {
+void Db::load_vcf(unsigned long int start_position, unsigned long int end_position) throw (Exception) {
 	Reader* reader = NULL;
 
 	char* line = NULL;
@@ -293,7 +295,7 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 	int vt_length = strlen(VCF_VARIANT_TYPE);
 
 	try {
-		reader = ReaderFactory::create(file_name);
+		reader = ReaderFactory::create(hap_file_name);
 		reader->open();
 
 		/* Read the first required line with file format description. */
@@ -303,15 +305,15 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 			if ((token = auxiliary::strtok(&line, '=')) != NULL) {
 				auxiliary::trim_end(token);
 				if (auxiliary::strcmp_ignore_case(token, VCF_FILE_FORMAT) != 0) {
-					throw Exception(__FILE__, __LINE__, "The mandatory VCF file format information line in '%s' file is incorrect.", file_name);
+					throw Exception(__FILE__, __LINE__, "The mandatory VCF file format information line in '%s' file is incorrect.", hap_file_name);
 				}
 			} else {
-				throw Exception(__FILE__, __LINE__, "The mandatory VCF file format information line in '%s' file is incorrect.", file_name);
+				throw Exception(__FILE__, __LINE__, "The mandatory VCF file format information line in '%s' file is incorrect.", hap_file_name);
 			}
 		}
 
 		if (line_length == 0) {
-			throw Exception(__FILE__, __LINE__, "The mandatory VCF file format information line in '%s' file is empty.", file_name);
+			throw Exception(__FILE__, __LINE__, "The mandatory VCF file format information line in '%s' file is empty.", hap_file_name);
 		}
 
 		/* Read the mandatory header. Meta-info lines are optional. */
@@ -321,14 +323,14 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 
 			if (line_length > 1) {
 				if (line[0u] != '#') {
-					throw Exception(__FILE__, __LINE__, "The mandatory VCF header line in '%s' file was not found.", file_name);
+					throw Exception(__FILE__, __LINE__, "The mandatory VCF header line in '%s' file was not found.", hap_file_name);
 				}
 
 				if (line[1u] != '#') {
 					while ((token = auxiliary::strtok(&line, VCF_FIELD_SEPARATOR)) != NULL) {
 						if (total_column_number < VCF_MANDATORY_COLUMNS_SIZE) {
 							if (auxiliary::strcmp_ignore_case(token, vcf_mandatory_columns[total_column_number]) != 0) {
-								throw Exception(__FILE__, __LINE__, "Column '%s' is missing on position %d in '%s' file.", vcf_mandatory_columns[total_column_number], total_column_number + 1u, file_name);
+								throw Exception(__FILE__, __LINE__, "Column '%s' is missing on position %d in '%s' file.", vcf_mandatory_columns[total_column_number], total_column_number + 1u, hap_file_name);
 							}
 						} else {
 							/* sample columns */
@@ -340,16 +342,16 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 					/* process meta-info line if necessary */
 				}
 			} else {
-				throw Exception(__FILE__, __LINE__, "The header/meta-information on line %d in '%s' file is incorrect.", line_number, file_name);
+				throw Exception(__FILE__, __LINE__, "The header/meta-information on line %d in '%s' file is incorrect.", line_number, hap_file_name);
 			}
 		}
 
 		if (line_length == 0) {
-			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, file_name);
+			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, hap_file_name);
 		}
 
 		if ((sample_number  = total_column_number - VCF_MANDATORY_COLUMNS_SIZE) <= 0) {
-			throw Exception(__FILE__, __LINE__, "No sample columns were found in '%s' file.", file_name);
+			throw Exception(__FILE__, __LINE__, "No sample columns were found in '%s' file.", hap_file_name);
 		}
 
 		n_haplotypes = 2u * ((unsigned int)sample_number);
@@ -373,12 +375,12 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 			}
 
 			if (column_number != total_column_number) {
-				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on line %d in '%s' file is not equal to the expected (%d).", column_number, line_number, file_name, total_column_number);
+				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on line %d in '%s' file is not equal to the expected (%d).", column_number, line_number, hap_file_name, total_column_number);
 			}
 
 			/* tokens[0] -- chromosome. check if unique accross all VCF file. must be one file per chromosome. */
 			if (!(chromosome.*chromosome.check)(tokens[0u])) {
-				throw Exception(__FILE__, __LINE__, "Unexpected chromosome '%s' (expected chromosome is '%s') was found on line %d in '%s' file.", tokens[0u], chromosome.get_value(), line_number, file_name);
+				throw Exception(__FILE__, __LINE__, "Unexpected chromosome '%s' (expected chromosome is '%s') was found on line %d in '%s' file.", tokens[0u], chromosome.get_value(), line_number, hap_file_name);
 			}
 
 			if (all_n_markers >= current_heap_size) {
@@ -387,7 +389,7 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 
 			/* tokens[1] -- position. parse to unsigned long integer */
 			if (!auxiliary::to_ulong_int(tokens[1u], &(all_positions[all_n_markers]))) {
-				throw Exception(__FILE__, __LINE__, "The chromosomal position '%s' on line %d in '%s' file could not be parsed to unsigned integer.", tokens[1u], line_number, file_name);
+				throw Exception(__FILE__, __LINE__, "The chromosomal position '%s' on line %d in '%s' file could not be parsed to unsigned integer.", tokens[1u], line_number, hap_file_name);
 			}
 
 			/* tokens[7] -- check info field. if variant type is specified, then it must be SNP. */
@@ -412,7 +414,7 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 			if ((all_positions[all_n_markers] >= start_position) && (all_positions[all_n_markers] <= end_position)) {
 				/* tokens[4] -- alt allele, if more than one value, then skip. if one value and more than one letter -- skip. Otherwise check if in {A,C,G,T} */
 				if ((length = strlen(tokens[4u])) < 1u) {
-					throw Exception(__FILE__, __LINE__, "The alternate allele value on line %d in '%s' file is empty.", line_number, file_name);
+					throw Exception(__FILE__, __LINE__, "The alternate allele value on line %d in '%s' file is empty.", line_number, hap_file_name);
 				} else if (length == 1u) {
 					all_minor_alleles[all_n_markers] = toupper(tokens[4u][0u]);
 					if (all_minor_alleles[all_n_markers] == '.') {
@@ -420,7 +422,7 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 						continue;
 					} else if ((all_minor_alleles[all_n_markers] != 'A') && (all_minor_alleles[all_n_markers] != 'C') &&
 							(all_minor_alleles[all_n_markers] != 'G') && (all_minor_alleles[all_n_markers] != 'T')) {
-						throw Exception(__FILE__, __LINE__, "The alternate allele value '%s' on line %d in '%s' file is incorrect.", tokens[4u], line_number, file_name);
+						throw Exception(__FILE__, __LINE__, "The alternate allele value '%s' on line %d in '%s' file is incorrect.", tokens[4u], line_number, hap_file_name);
 					}
 				} else {
 					/* multi-allelic SNP or indel, deletion and etc. */
@@ -429,12 +431,12 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 
 				/* tokens[3] -- ref allele, if more than one letter, then indel -- skip. Otherwise check if in {A,C,G,T}. */
 				if ((length = strlen(tokens[3u])) < 1u) {
-					throw Exception(__FILE__, __LINE__, "The reference allele value on line %d in '%s' file is empty.", line_number, file_name);
+					throw Exception(__FILE__, __LINE__, "The reference allele value on line %d in '%s' file is empty.", line_number, hap_file_name);
 				} else if (length == 1u) {
 					all_major_alleles[all_n_markers] = toupper(tokens[3u][0u]);
 					if ((all_major_alleles[all_n_markers] != 'A') && (all_major_alleles[all_n_markers] != 'C') &&
 							(all_major_alleles[all_n_markers] != 'G') && (all_major_alleles[all_n_markers] != 'T')) {
-						throw Exception(__FILE__, __LINE__, "The reference allele value '%s' on line %d in '%s' file is incorrect.", tokens[3u], line_number, file_name);
+						throw Exception(__FILE__, __LINE__, "The reference allele value '%s' on line %d in '%s' file is incorrect.", tokens[3u], line_number, hap_file_name);
 					}
 				} else {
 					/* indel, deletion and etc. */
@@ -460,11 +462,11 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 				for (unsigned int i = 9u; i < total_column_number; ++i) {
 					if ((token = auxiliary::strtok(&(tokens[i]), ':')) != NULL) {
 						if (strlen(token) != 3u) {
-							throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has an incorrect genotype value '%s'.", i - 9u, line_number, file_name, token);
+							throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has an incorrect genotype value '%s'.", i - 9u, line_number, hap_file_name, token);
 						}
 
 						if (token[1u] != '|') {
-							throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has UNPHASED genotype '%s'.", i - 9u, line_number, file_name, token);
+							throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has UNPHASED genotype '%s'.", i - 9u, line_number, hap_file_name, token);
 						}
 
 						first_allele_index = 2u * (i - 9u);
@@ -482,7 +484,7 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 							all_haplotypes[all_n_markers][first_allele_index] = all_minor_alleles[all_n_markers];
 							++n_alt_allele;
 						} else {
-							throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has unexpected first allele '%c'.", i - 9, line_number, file_name, token[0u]);
+							throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has unexpected first allele '%c'.", i - 9, line_number, hap_file_name, token[0u]);
 						}
 
 						if (token[2u] == '0') {
@@ -492,10 +494,10 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 							all_haplotypes[all_n_markers][second_allele_index] = all_minor_alleles[all_n_markers];
 							++n_alt_allele;
 						} else {
-							throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has unexpected second allele '%c'.", i - 9u, line_number, file_name, token[2u]);
+							throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has unexpected second allele '%c'.", i - 9u, line_number, hap_file_name, token[2u]);
 						}
 					} else {
-						throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has an incorrect value.", i - 9u, line_number, file_name);
+						throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has an incorrect value.", i - 9u, line_number, hap_file_name);
 					}
 				}
 
@@ -514,7 +516,7 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 		}
 
 		if (line_length == 0) {
-			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, file_name);
+			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, hap_file_name);
 		}
 
 		reader->close();
@@ -522,16 +524,14 @@ void Db::load_vcf(const char* file_name, unsigned long int start_position, unsig
 
 		free(tokens);
 		tokens = NULL;
-
-//		mask(numeric_limits<double>::quiet_NaN());
 	} catch (Exception &e) {
-		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", file_name);
+		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", hap_file_name);
 		throw;
 	}
 
 }
 
-void Db::load_vcf(const char* file_name) throw (Exception) {
+void Db::load_vcf() throw (Exception) {
 	Reader* reader = NULL;
 
 	char* line = NULL;
@@ -557,7 +557,7 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 	int vt_length = strlen(VCF_VARIANT_TYPE);
 
 	try {
-		reader = ReaderFactory::create(file_name);
+		reader = ReaderFactory::create(hap_file_name);
 		reader->open();
 
 		/* Read the first required line with file format description. */
@@ -567,15 +567,15 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 			if ((token = auxiliary::strtok(&line, '=')) != NULL) {
 				auxiliary::trim_end(token);
 				if (auxiliary::strcmp_ignore_case(token, VCF_FILE_FORMAT) != 0) {
-					throw Exception(__FILE__, __LINE__, "The mandatory VCF file format information line in '%s' file is incorrect.", file_name);
+					throw Exception(__FILE__, __LINE__, "The mandatory VCF file format information line in '%s' file is incorrect.", hap_file_name);
 				}
 			} else {
-				throw Exception(__FILE__, __LINE__, "The mandatory VCF file format information line in '%s' file is incorrect.", file_name);
+				throw Exception(__FILE__, __LINE__, "The mandatory VCF file format information line in '%s' file is incorrect.", hap_file_name);
 			}
 		}
 
 		if (line_length == 0) {
-			throw Exception(__FILE__, __LINE__, "The mandatory VCF file format information line in '%s' file is empty.", file_name);
+			throw Exception(__FILE__, __LINE__, "The mandatory VCF file format information line in '%s' file is empty.", hap_file_name);
 		}
 
 		/* Read the mandatory header. Meta-info lines are optional. */
@@ -585,14 +585,14 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 
 			if (line_length > 1) {
 				if (line[0u] != '#') {
-					throw Exception(__FILE__, __LINE__, "The mandatory VCF header line in '%s' file was not found.", file_name);
+					throw Exception(__FILE__, __LINE__, "The mandatory VCF header line in '%s' file was not found.", hap_file_name);
 				}
 
 				if (line[1u] != '#') {
 					while ((token = auxiliary::strtok(&line, VCF_FIELD_SEPARATOR)) != NULL) {
 						if (total_column_number < VCF_MANDATORY_COLUMNS_SIZE) {
 							if (auxiliary::strcmp_ignore_case(token, vcf_mandatory_columns[total_column_number]) != 0) {
-								throw Exception(__FILE__, __LINE__, "Column '%s' is missing on position %d in '%s' file.", vcf_mandatory_columns[total_column_number], total_column_number + 1u, file_name);
+								throw Exception(__FILE__, __LINE__, "Column '%s' is missing on position %d in '%s' file.", vcf_mandatory_columns[total_column_number], total_column_number + 1u, hap_file_name);
 							}
 						} else {
 							/* sample columns */
@@ -604,16 +604,16 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 					/* process meta-info line if necessary */
 				}
 			} else {
-				throw Exception(__FILE__, __LINE__, "The header/meta-information on line %d in '%s' file is incorrect.", line_number, file_name);
+				throw Exception(__FILE__, __LINE__, "The header/meta-information on line %d in '%s' file is incorrect.", line_number, hap_file_name);
 			}
 		}
 
 		if (line_length == 0) {
-			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, file_name);
+			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, hap_file_name);
 		}
 
 		if ((sample_number  = total_column_number - VCF_MANDATORY_COLUMNS_SIZE) <= 0) {
-			throw Exception(__FILE__, __LINE__, "No sample columns were found in '%s' file.", file_name);
+			throw Exception(__FILE__, __LINE__, "No sample columns were found in '%s' file.", hap_file_name);
 		}
 
 		n_haplotypes = 2u * ((unsigned int)sample_number);
@@ -637,12 +637,12 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 			}
 
 			if (column_number != total_column_number) {
-				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on line %d in '%s' file is not equal to the expected (%d).", column_number, line_number, file_name, total_column_number);
+				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on line %d in '%s' file is not equal to the expected (%d).", column_number, line_number, hap_file_name, total_column_number);
 			}
 
 			/* tokens[0] -- chromosome. check if unique accross all VCF file. must be one file per chromosome. */
 			if (!(chromosome.*chromosome.check)(tokens[0u])) {
-				throw Exception(__FILE__, __LINE__, "Unexpected chromosome '%s' (expected chromosome is '%s') was found on line %d in '%s' file.", tokens[0u], chromosome.get_value(), line_number, file_name);
+				throw Exception(__FILE__, __LINE__, "Unexpected chromosome '%s' (expected chromosome is '%s') was found on line %d in '%s' file.", tokens[0u], chromosome.get_value(), line_number, hap_file_name);
 			}
 
 			if (all_n_markers >= current_heap_size) {
@@ -651,7 +651,7 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 
 			/* tokens[1] -- position. parse to unsigned long integer */
 			if (!auxiliary::to_ulong_int(tokens[1u], &(all_positions[all_n_markers]))) {
-				throw Exception(__FILE__, __LINE__, "The chromosomal position '%s' on line %d in '%s' file could not be parsed to unsigned integer.", tokens[1u], line_number, file_name);
+				throw Exception(__FILE__, __LINE__, "The chromosomal position '%s' on line %d in '%s' file could not be parsed to unsigned integer.", tokens[1u], line_number, hap_file_name);
 			}
 
 			/* tokens[7] -- check info field. if variant type is specified, then it must be SNP. */
@@ -675,7 +675,7 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 
 			/* tokens[4] -- alt allele, if more than one value, then skip. if one value and more than one letter -- skip. Otherwise check if in {A,C,G,T} */
 			if ((length = strlen(tokens[4u])) < 1u) {
-				throw Exception(__FILE__, __LINE__, "The alternate allele value on line %d in '%s' file is empty.", line_number, file_name);
+				throw Exception(__FILE__, __LINE__, "The alternate allele value on line %d in '%s' file is empty.", line_number, hap_file_name);
 			} else if (length == 1u) {
 				all_minor_alleles[all_n_markers] = toupper(tokens[4u][0u]);
 				if (all_minor_alleles[all_n_markers] == '.') {
@@ -683,7 +683,7 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 					continue;
 				} else if ((all_minor_alleles[all_n_markers] != 'A') && (all_minor_alleles[all_n_markers] != 'C') &&
 						(all_minor_alleles[all_n_markers] != 'G') && (all_minor_alleles[all_n_markers] != 'T')) {
-					throw Exception(__FILE__, __LINE__, "The alternate allele value '%s' on line %d in '%s' file is incorrect.", tokens[4u], line_number, file_name);
+					throw Exception(__FILE__, __LINE__, "The alternate allele value '%s' on line %d in '%s' file is incorrect.", tokens[4u], line_number, hap_file_name);
 				}
 			} else {
 				/* multi-allelic SNP or indel, deletion and etc. */
@@ -692,12 +692,12 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 
 			/* tokens[3] -- ref allele, if more than one letter, then indel -- skip. Otherwise check if in {A,C,G,T}. */
 			if ((length = strlen(tokens[3u])) < 1u) {
-				throw Exception(__FILE__, __LINE__, "The reference allele value on line %d in '%s' file is empty.", line_number, file_name);
+				throw Exception(__FILE__, __LINE__, "The reference allele value on line %d in '%s' file is empty.", line_number, hap_file_name);
 			} else if (length == 1u) {
 				all_major_alleles[all_n_markers] = toupper(tokens[3u][0u]);
 				if ((all_major_alleles[all_n_markers] != 'A') && (all_major_alleles[all_n_markers] != 'C') &&
 						(all_major_alleles[all_n_markers] != 'G') && (all_major_alleles[all_n_markers] != 'T')) {
-					throw Exception(__FILE__, __LINE__, "The reference allele value '%s' on line %d in '%s' file is incorrect.", tokens[3u], line_number, file_name);
+					throw Exception(__FILE__, __LINE__, "The reference allele value '%s' on line %d in '%s' file is incorrect.", tokens[3u], line_number, hap_file_name);
 				}
 			} else {
 				/* indel, deletion and etc. */
@@ -723,11 +723,11 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 			for (unsigned int i = 9u; i < total_column_number; ++i) {
 				if ((token = auxiliary::strtok(&(tokens[i]), ':')) != NULL) {
 					if (strlen(token) != 3u) {
-						throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has an incorrect genotype value '%s'.", i - 9u, line_number, file_name, token);
+						throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has an incorrect genotype value '%s'.", i - 9u, line_number, hap_file_name, token);
 					}
 
 					if (token[1u] != '|') {
-						throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has UNPHASED genotype '%s'.", i - 9u, line_number, file_name, token);
+						throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has UNPHASED genotype '%s'.", i - 9u, line_number, hap_file_name, token);
 					}
 
 					first_allele_index = 2u * (i - 9u);
@@ -745,7 +745,7 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 						all_haplotypes[all_n_markers][first_allele_index] = all_minor_alleles[all_n_markers];
 						++n_alt_allele;
 					} else {
-						throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has unexpected first allele '%c'.", i - 9u, line_number, file_name, token[0u]);
+						throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has unexpected first allele '%c'.", i - 9u, line_number, hap_file_name, token[0u]);
 					}
 
 					if (token[2u] == '0') {
@@ -755,10 +755,10 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 						all_haplotypes[all_n_markers][second_allele_index] = all_minor_alleles[all_n_markers];
 						++n_alt_allele;
 					} else {
-						throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has unexpected second allele '%c'.", i - 9u, line_number, file_name, token[2u]);
+						throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has unexpected second allele '%c'.", i - 9u, line_number, hap_file_name, token[2u]);
 					}
 				} else {
-					throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has an incorrect value.", i - 9u, line_number, file_name);
+					throw Exception(__FILE__, __LINE__, "Sample %d on line %d in '%s' file has an incorrect value.", i - 9u, line_number, hap_file_name);
 				}
 			}
 
@@ -776,7 +776,7 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 		}
 
 		if (line_length == 0) {
-			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, file_name);
+			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, hap_file_name);
 		}
 
 		reader->close();
@@ -785,12 +785,12 @@ void Db::load_vcf(const char* file_name) throw (Exception) {
 		free(tokens);
 		tokens = NULL;
 	} catch (Exception &e) {
-		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", file_name);
+		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", hap_file_name);
 		throw;
 	}
 }
 
-void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name, unsigned long int start_position, unsigned long int end_position) throw (Exception) {
+void Db::load_hapmap2(unsigned long int start_position, unsigned long int end_position) throw (Exception) {
 	Reader* reader = NULL;
 
 	char* line = NULL;
@@ -1056,7 +1056,7 @@ void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name, unsi
 	filter = NULL;
 }
 
-void Db::load_hapmap2(const char* map_file_name, const char* hap_file_name) throw (Exception) {
+void Db::load_hapmap2() throw (Exception) {
 	Reader* reader = NULL;
 
 	char* line = NULL;
@@ -1284,18 +1284,21 @@ const DbView* Db::create_view(double maf_threshold, unsigned long int start_posi
 	unsigned int end_index = 0u;
 	unsigned int n_markers = 0u;
 
+	if (all_n_markers <= 1u) {
+		return NULL;
+	}
+
 	if ((start_position > 0u) || (end_position != numeric_limits<unsigned long int>::max())) {
 		for (unsigned int i = 0u; i < all_n_markers; ++i) {
+			start_index = i;
 			if (all_positions[i] >= start_position) {
-				start_index = i;
-				end_index = i;
 				break;
 			}
 		}
 
-		for (unsigned int i = all_n_markers - 1u; i >= start_index; --i) {
+		for (long int i = all_n_markers - 1u; i >= start_index; --i) {
+			end_index = (unsigned int)i;
 			if (all_positions[i] <= end_position) {
-				end_index = i;
 				break;
 			}
 		}

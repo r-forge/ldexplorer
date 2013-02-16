@@ -75,11 +75,11 @@ private:
 
 	unsigned int current_heap_size;
 
-	void load_vcf(const char* file_name, unsigned long int start_position, unsigned long int end_position) throw (Exception);
-	void load_vcf(const char* file_name) throw (Exception);
+	void load_vcf(unsigned long int start_position, unsigned long int end_position) throw (Exception);
+	void load_vcf() throw (Exception);
 
-	void load_hapmap2(const char* map_file_name, const char* hap_file_name, unsigned long int start_position, unsigned long int end_position) throw (Exception);
-	void load_hapmap2(const char* map_file_name, const char* hap_file_name) throw (Exception);
+	void load_hapmap2(unsigned long int start_position, unsigned long int end_position) throw (Exception);
+	void load_hapmap2() throw (Exception);
 
 	void free_markers(unsigned int heap_size);
 	void free_positions(unsigned int heap_size);
@@ -101,7 +101,10 @@ public:
 	Db() throw (Exception);
 	virtual ~Db();
 
-	void load(const char* hap_file_name, const char* map_file_name, unsigned long int start_position, unsigned long int end_position, const char* type) throw (Exception);
+	void set_hap_file(const char* hap_file_name);
+	void set_map_file(const char* map_file_name);
+
+	void load(unsigned long int start_position, unsigned long int end_position, const char* type) throw (Exception);
 
 	const DbView* create_view(double maf_threshold, unsigned long int start_position, unsigned long int end_position) throw (Exception);
 

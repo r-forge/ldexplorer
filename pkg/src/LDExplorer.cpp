@@ -212,22 +212,19 @@ extern "C" {
 			SEXP region, SEXP maf, SEXP ci_method, SEXP l_density, SEXP ld_ci, SEXP ehr_ci, SEXP ld_fraction,
 			SEXP pruning_method, SEXP window) {
 
-		const char* c_phase_file;
-		const char* c_output_file;
-		const char* c_phase_file_format;
-		const char* c_map_file;
-		long int c_region[2] = {0, numeric_limits<long int>::max()};
+		const char* c_phase_file = NULL;
+		const char* c_output_file = NULL;
+		const char* c_phase_file_format = NULL;
+		const char* c_map_file = NULL;
+		long int c_region[2] = {numeric_limits<long int>::min(), numeric_limits<long int>::min()};
 		double c_maf = numeric_limits<double>::quiet_NaN();
 		const char* c_ci_method = NULL;
-		long int c_l_density = 0;
+		long int c_l_density = numeric_limits<long int>::min();
 		double c_ld_ci[2] = {numeric_limits<double>::quiet_NaN(), numeric_limits<double>::quiet_NaN()};
 		double c_ehr_ci = numeric_limits<double>::quiet_NaN();
 		double c_ld_fraction = numeric_limits<double>::quiet_NaN();
 		const char* c_pruning_method = NULL;
-		long int c_window = 0;
-
-
-		bool is_default_window = false;
+		long int c_window = numeric_limits<long int>::min();
 
 //		Validate phase_file argument.
 		if (!isNull(phase_file)) {
@@ -275,6 +272,9 @@ extern "C" {
 			if (c_region[0] >= c_region[1]) {
 				error("The region end position, specified in '%s' argument, must be strictly greater than the region start position.", "region");
 			}
+
+//			start_position = (unsigned long int)c_region[0];
+//			end_position = (unsigned long int)c_region[1];
 		}
 
 //		Validate maf argument.
@@ -298,10 +298,10 @@ extern "C" {
 			error("'%s' argument is NULL.", "ci_method");
 		}
 
-//		Validate ci_precision argument if WP method to compute D' CI was specified.
+//		Validate likelihood density argument if WP method to compute D' CI was specified.
 		if (auxiliary::strcmp_ignore_case(c_ci_method, CI::CI_WP) == 0) {
 			if (!isNull(l_density)) {
-				c_l_density = validateInteger(l_density, "ci_precision");
+				c_l_density = validateInteger(l_density, "l_density");
 				if (c_l_density <= 0) {
 					error("The number of likelihood estimation points to compute confidence interval, specified in '%s' argument, must be strictly greater then 0.", "l_density");
 				}
@@ -366,12 +366,11 @@ extern "C" {
 				if (c_window <= 0) {
 					error("The window size, specified in '%s' argument, must be strictly greater than 0.", "window");
 				}
-			} else {
-				is_default_window = true;
 			}
 		}
 
 		Algorithm* algorithm = NULL;
+		Partition* partition = NULL;
 
 		try {
 			clock_t start_time = 0;
@@ -379,18 +378,25 @@ extern "C" {
 
 			Db db;
 			const DbView* dbview = NULL;
-			Algorithm* algorithm = NULL;
-			Partition* partition = NULL;
 
 			Rprintf("Loading data...\n");
-			start_time = clock();
 
-			db.load(c_phase_file, c_map_file, c_region[0], c_region[1], c_phase_file_format);
-			dbview = db.create_view(c_maf, c_region[0], c_region[1]);
+			start_time = clock();
+			db.set_hap_file(c_phase_file);
+			db.set_map_file(c_map_file);
+			db.load(c_region[0] == numeric_limits<long int>::min() ? 0u : (unsigned long int)c_region[0], c_region[1] == numeric_limits<long int>::min() ? numeric_limits<unsigned long int>::max() : (unsigned long int)c_region[1], c_phase_file_format);
+			dbview = db.create_view(c_maf, c_region[0] == numeric_limits<long int>::min() ? 0u : (unsigned long int)c_region[0], c_region[1] == numeric_limits<long int>::min() ? numeric_limits<unsigned long int>::max() : (unsigned long int)c_region[1]);
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+
+			if (dbview == NULL) {
+				Rprintf("\tNot enough SNPs (<= 1) in the specified region.\n");
+				Rprintf("Done (%.3f sec)\n", execution_time);
+				return R_NilValue;
+			}
 
 			Rprintf("\tPhase file: %s\n", c_phase_file);
 			Rprintf("\tMap file: %s\n", c_map_file == NULL ? "NA" : c_map_file);
-			if ((c_region[0] > 0) || (c_region[1] != numeric_limits<long int>::max())) {
+			if ((c_region[0] != numeric_limits<long int>::min()) && (c_region[1] != numeric_limits<long int>::min())) {
 				Rprintf("\tRegion: [%u, %u]\n", c_region[0], c_region[1]);
 			} else {
 				Rprintf("\tRegion: NA\n");
@@ -400,8 +406,6 @@ extern "C" {
 			Rprintf("\tFiltered SNPs: %u\n", dbview->n_markers);
 			Rprintf("\tHaplotypes: %u\n", dbview->n_haplotypes);
 			Rprintf("\tUsed memory (Mb): %.3f\n", db.get_memory_usage());
-
-			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
 			Rprintf("Done (%.3f sec)\n", execution_time);
 
 			Rprintf("Initializing algorithm...\n");
@@ -421,7 +425,7 @@ extern "C" {
 			Rprintf("\tPruning method: %s\n", c_pruning_method);
 			Rprintf("\tWindow: ");
 			if (auxiliary::strcmp_ignore_case(c_pruning_method, Algorithm::ALGORITHM_MIGPP) == 0) {
-				if (is_default_window) {
+				if (c_window == numeric_limits<long int>::min()) {
 					c_window = (long int)(((double)dbview->n_markers * (1.0 - c_ld_fraction)) / 2.0);
 					if (c_window <= 0) {
 						c_window = 1;
@@ -475,15 +479,30 @@ extern "C" {
 			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
 			Rprintf("Done (%.3f sec)\n", execution_time);
 
+			delete partition;
+			partition = NULL;
+
 			delete algorithm;
 			algorithm = NULL;
 
 		} catch (Exception &e) {
+			delete partition;
+			partition = NULL;
+
 			delete algorithm;
 			algorithm = NULL;
 
 			error("%s", e.what());
 		}
+
+		return R_NilValue;
+	}
+
+	SEXP mig_multi_regions(SEXP phase_file, SEXP output_file, SEXP regions_start, SEXP regions_end, SEXP processes,
+			SEXP phase_file_format, SEXP map_file,
+			SEXP region, SEXP maf, SEXP ci_method, SEXP l_density, SEXP ld_ci, SEXP ehr_ci, SEXP ld_fraction,
+			SEXP pruning_method, SEXP window) {
+
 
 		return R_NilValue;
 	}
