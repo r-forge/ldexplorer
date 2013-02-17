@@ -17,10 +17,10 @@
 # along with LDExplorer.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-PKG_LIBS = $(APPLIBS)
+PKG_LIBS = $(APPLIBS) -fopenmp
 
-PKG_CFLAGS = -DNO_VIZ
-PKG_CPPFLAGS = 
+PKG_CFLAGS = -DNO_VIZ -fopenmp
+PKG_CPPFLAGS = -fopenmp
 PKG_CXXFLAGS =
 
 R_MAKECONF = $(R_HOME)/etc${R_ARCH}/Makeconf

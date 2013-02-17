@@ -21,6 +21,7 @@
 #include <limits>
 #include <math.h>
 #include <time.h>
+#include <omp.h>
 
 #include "algorithms/include/CIFactory.h"
 #include "algorithms/include/AlgorithmFactory.h"
@@ -57,6 +58,28 @@ extern "C" {
 		}
 
 		return CHAR(STRING_ELT(value, 0));
+	}
+
+	void validateStringsLengthFree(SEXP value, const char* name, vector<const char*>& c_value) {
+		long int size = 0;
+
+		if (!isString(value)) {
+			error("'%s' argument is not a string.", name);
+		}
+
+		size = length(value);
+
+		for (long int i = 0; i < size; ++i) {
+			if (STRING_ELT(value, i) == R_NaString) {
+				error("'%s' argument contains NA values.", name);
+			}
+
+			if (STRING_ELT(value, i) == R_BlankString) {
+				error("'%s' argument contains blank values.", name);
+			}
+
+			c_value.push_back(CHAR(STRING_ELT(value, i)));
+		}
 	}
 
 	double validateDouble(SEXP value, const char* name) {
@@ -175,7 +198,7 @@ extern "C" {
 
 		if (isInteger(value)) {
 			for (unsigned int i = 0; i < length; ++i) {
-				c_value[i] = (double)INTEGER(value)[i];
+				c_value[i] = INTEGER(value)[i];
 			}
 		} else {
 			for (unsigned int i = 0; i < length; ++i) {
@@ -184,6 +207,35 @@ extern "C" {
 					error("'%s' argument contains NA/NaN value(s).", name);
 				}
 				c_value[i] = (long int)c_value_double;
+			}
+		}
+	}
+
+	void validateIntegersLengthFree(SEXP value, const char* name, vector<long int>& c_value) {
+		long int size = 0;
+		double c_value_double = numeric_limits<double>::quiet_NaN();
+
+		if (!isNumeric(value)) {
+			error("'%s' argument is not numeric.", name);
+		}
+
+		if (isLogical(value)) {
+			error("'%s' argument is logical.", name);
+		}
+
+		size = length(value);
+
+		if (isInteger(value)) {
+			for (long int i = 0; i < size; ++i) {
+				c_value.push_back(INTEGER(value)[i]);
+			}
+		} else {
+			for (long int i = 0; i < size; ++i) {
+				c_value_double = REAL(value)[i];
+				if (isnan(c_value_double)) {
+					error("'%s' argument contains NA/NaN value(s).", name);
+				}
+				c_value.push_back((long int)c_value_double);
 			}
 		}
 	}
@@ -272,9 +324,6 @@ extern "C" {
 			if (c_region[0] >= c_region[1]) {
 				error("The region end position, specified in '%s' argument, must be strictly greater than the region start position.", "region");
 			}
-
-//			start_position = (unsigned long int)c_region[0];
-//			end_position = (unsigned long int)c_region[1];
 		}
 
 //		Validate maf argument.
@@ -498,11 +547,310 @@ extern "C" {
 		return R_NilValue;
 	}
 
-	SEXP mig_multi_regions(SEXP phase_file, SEXP output_file, SEXP regions_start, SEXP regions_end, SEXP processes,
+	SEXP mig_multi_regions(SEXP phase_file, SEXP output_files, SEXP regions_start, SEXP regions_end, SEXP processes,
 			SEXP phase_file_format, SEXP map_file,
-			SEXP region, SEXP maf, SEXP ci_method, SEXP l_density, SEXP ld_ci, SEXP ehr_ci, SEXP ld_fraction,
-			SEXP pruning_method, SEXP window) {
+			SEXP maf, SEXP ci_method, SEXP l_density, SEXP ld_ci, SEXP ehr_ci, SEXP ld_fraction,
+			SEXP pruning_method, SEXP windows) {
 
+		const char* c_phase_file = NULL;
+		vector<const char*> c_output_files;
+		const char* c_phase_file_format = NULL;
+		const char* c_map_file = NULL;
+		vector<long int> c_regions_start;
+		vector<long int> c_regions_end;
+		long int c_processes = numeric_limits<long int>::min();
+		double c_maf = numeric_limits<double>::quiet_NaN();
+		const char* c_ci_method = NULL;
+		long int c_l_density = numeric_limits<long int>::min();
+		double c_ld_ci[2] = {numeric_limits<double>::quiet_NaN(), numeric_limits<double>::quiet_NaN()};
+		double c_ehr_ci = numeric_limits<double>::quiet_NaN();
+		double c_ld_fraction = numeric_limits<double>::quiet_NaN();
+		const char* c_pruning_method = NULL;
+		vector<long int> c_windows;
+		long int c_window = numeric_limits<long int>::min();
+
+//		Validate phase_file argument.
+		if (!isNull(phase_file)) {
+			c_phase_file = validateString(phase_file, "phase_file");
+		} else {
+			error("'%s' argument is NULL.", "phase_file");
+		}
+
+//		Validate output_file argument.
+		if (!isNull(output_files)) {
+			validateStringsLengthFree(output_files, "output_files", c_output_files);
+		} else {
+			error("'%s' argument is NULL.", "output_files");
+		}
+
+//		Validate file_format argument.
+		if (!isNull(phase_file_format)) {
+			c_phase_file_format = validateString(phase_file_format, "file_format");
+			if ((auxiliary::strcmp_ignore_case(c_phase_file_format, Db::VCF) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_phase_file_format, Db::HAPMAP2) != 0)) {
+				error("The file format, specified in '%s' argument, must be '%s' or '%s'.", "phase_file_format", Db::VCF, Db::HAPMAP2);
+			}
+		} else {
+			error("'%s' argument is NULL.", "phase_file_format");
+		}
+
+//		Validate legend_file argument.
+		if (auxiliary::strcmp_ignore_case(c_phase_file_format, Db::HAPMAP2) == 0) {
+			if (!isNull(map_file)) {
+				c_map_file = validateString(map_file, "map_file");
+			} else {
+				error("'%s' argument is NULL.", "map_file");
+			}
+		}
+
+//		Validate regions_start and regions_end arguments
+		if (!isNull(regions_start)) {
+			validateIntegersLengthFree(regions_start, "regions_start", c_regions_start);
+		} else {
+			error("'%s' argument is NULL.", "regions_start");
+		}
+
+		if (!isNull(regions_end)) {
+			validateIntegersLengthFree(regions_end, "regions_end", c_regions_end);
+		} else {
+			error("'%s' argument is NULL.", "regions_end");
+		}
+
+		for (unsigned int i = 0u; i < c_regions_start.size(); ++i) {
+			if (c_regions_start.at(0) < 0) {
+				error("The region start positions, specified in '%s' argument, must be positive.", "regions_start");
+			}
+		}
+
+		for (unsigned int i = 0u; i < c_regions_end.size(); ++i) {
+			if (c_regions_end.at(0) < 0) {
+				error("The region end positions, specified in '%s' argument, must be positive.", "regions_end");
+			}
+		}
+
+		if (c_regions_start.size() != c_regions_end.size()) {
+			error("The number of region start and end positions, specified in '%s' and '%s' arguments, must be identical.", "regions_start", "regions_end");
+		}
+
+		for (unsigned int i = 0u; i < c_regions_start.size(); ++i) {
+			if (c_regions_start.at(i) >= c_regions_end.at(i)) {
+				error("The region end positions, specified in '%s' argument, must be strictly greater than the region start positions, specified in '%s' argument.", "regions_end", "regions_start");
+			}
+		}
+
+		if (c_output_files.size() != c_regions_start.size()) {
+			error("The number of the specified output files must correspond to the number of the specified regions.");
+		}
+
+//		Validate processes argument.
+		if (!isNull(processes)) {
+			c_processes = validateInteger(processes, "processes");
+			if (c_processes < 1) {
+				error("The number of processes, specified in '%s' argument, must be greater than 0.", "processes");
+			}
+		} else {
+			error("'%s' argument is NULL.", "processes");
+		}
+
+//		Validate maf argument.
+		if (!isNull(maf)) {
+			c_maf = validateDouble(maf, "maf");
+			if ((c_maf < 0.0) || (c_maf > 0.5)) {
+				error("The minor allele frequency, specified in '%s' argument, must be in [0, 0.5] interval.", "maf");
+			}
+		} else {
+			error("'%s' argument is NULL.", "maf");
+		}
+
+//		Validate ci_method argument.
+		if (!isNull(ci_method)) {
+			c_ci_method = validateString(ci_method, "ci_method");
+			if ((auxiliary::strcmp_ignore_case(c_ci_method, CI::CI_WP) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_ci_method, CI::CI_AV) != 0)) {
+				error("The method to compute the confidence interval (CI) of D', specified in '%s' argument, must be '%s' or '%s'.", "file_format", CI::CI_WP, CI::CI_AV);
+			}
+		} else {
+			error("'%s' argument is NULL.", "ci_method");
+		}
+
+//		Validate likelihood density argument if WP method to compute D' CI was specified.
+		if (auxiliary::strcmp_ignore_case(c_ci_method, CI::CI_WP) == 0) {
+			if (!isNull(l_density)) {
+				c_l_density = validateInteger(l_density, "l_density");
+				if (c_l_density <= 0) {
+					error("The number of likelihood estimation points to compute confidence interval, specified in '%s' argument, must be strictly greater then 0.", "l_density");
+				}
+			} else {
+				error("'%s' argument is NULL.", "l_density");
+			}
+		}
+
+//		Validate ld_ci argument.
+		if (!isNull(ld_ci)) {
+			validateDoubles(ld_ci, "ld_ci", c_ld_ci, 2u);
+			if ((c_ld_ci[0] < 0.0) || (c_ld_ci[0] > 1.0)) {
+				error("The lower bound of confidence interval, specified in '%s' argument, must be in [0, 1] interval.", "ld_ci");
+			}
+			if ((c_ld_ci[1] < 0.0) || (c_ld_ci[1] > 1.0)) {
+				error("The upper bound of confidence interval, specified in '%s' argument, must be in [0, 1] interval.", "ld_ci");
+			}
+			if (c_ld_ci[0] >= c_ld_ci[1]) {
+				error("The upper bound of confidence interval, specified in '%s' argument, must be greater than the lower bound.", "ld_ci");
+			}
+		} else {
+			error("'%s' argument is NULL.", "ld_ci");
+		}
+
+//		Validate ehr_ci argument.
+		if (!isNull(ehr_ci)) {
+			c_ehr_ci = validateDouble(ehr_ci, "ehr_ci");
+			if ((c_ehr_ci < 0.0) || (c_ehr_ci > 1.0)) {
+				error("The upper bound of confidence interval, specified in '%s' argument, must be in [0, 1] interval.", "ehr_ci");
+			}
+		} else {
+			error("'%s' argument is NULL.", "ehr_ci");
+		}
+
+//		Validate ld_fraction argument.
+		if (!isNull(ld_fraction)) {
+			c_ld_fraction = validateDouble(ld_fraction, "ld_fraction");
+			if ((c_ld_fraction <= 0.0) || (c_ld_fraction > 1.0)) {
+				error("The fraction of strong LD SNP pairs within a haplotype block, specified in '%s' argument, must be in (0.0, 1.0] interval.", "ld_fraction");
+			}
+		} else {
+			error("'%s' argument is NULL.", "ld_fraction");
+		}
+
+//		Validate pruning_method argument.
+		if (!isNull(pruning_method)) {
+			c_pruning_method = validateString(pruning_method, "pruning_method");
+			if ((auxiliary::strcmp_ignore_case(c_pruning_method, Algorithm::ALGORITHM_MIG) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_pruning_method, Algorithm::ALGORITHM_MIGP) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_pruning_method, Algorithm::ALGORITHM_MIGPP) != 0)) {
+				error("The search space pruning method, specified in '%s' argument, must be '%s', '%s' or '%s'.",
+						"file_format", Algorithm::ALGORITHM_MIG, Algorithm::ALGORITHM_MIGP, Algorithm::ALGORITHM_MIGPP);
+			}
+		} else {
+			error("'%s' argument is NULL.", "pruning_method");
+		}
+
+//		Validate window argument if MIG++ search space pruning method was specified.
+		if (auxiliary::strcmp_ignore_case(c_pruning_method, Algorithm::ALGORITHM_MIGPP) == 0) {
+			if (!isNull(windows)) {
+				validateIntegersLengthFree(windows, "windows", c_windows);
+
+				for (unsigned int i = 0u; i < c_windows.size(); ++i) {
+					if (c_windows.at(i) <= 0) {
+						error("The window sizes, specified in '%s' argument, must be strictly greater than 0.", "windows");
+					}
+				}
+
+				if (c_output_files.size() != c_windows.size()) {
+					error("The number of the specified output files must correspond to the number of the specified windows.");
+				}
+			}
+		}
+
+		try {
+			clock_t start_time = 0;
+			double execution_time = 0.0;
+
+			Db db;
+			const DbView* dbview = NULL;
+			vector<const DbView*> dbviews;
+			Algorithm* algorithm = NULL;
+			vector<Algorithm*> algorithms;
+
+			Rprintf("Loading data...\n");
+
+			start_time = clock();
+			db.set_hap_file(c_phase_file);
+			db.set_map_file(c_map_file);
+			db.load(0u, numeric_limits<unsigned long int>::max(), c_phase_file_format);
+			for (unsigned int i = 0u; i < c_output_files.size(); ++i) {
+				dbview = db.create_view(c_maf, c_regions_start.at(i), c_regions_end.at(i));
+				dbviews.push_back(dbview);
+			}
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+
+			Rprintf("\tPhase file: %s\n", c_phase_file);
+			Rprintf("\tMap file: %s\n", c_map_file == NULL ? "NA" : c_map_file);
+			Rprintf("\tAll SNPs: %u\n", db.get_all_n_markers());
+			Rprintf("\tHaplotypes: %u\n", db.get_n_haplotypes());
+			Rprintf("\tUsed memory (Mb): %.3f\n", db.get_memory_usage());
+			Rprintf("Done (%.3f sec)\n", execution_time);
+
+			Rprintf("Initializing algorithm...\n");
+
+			start_time = clock();
+			if (c_windows.size() == 0) {
+				for (unsigned int i = 0u; i < dbviews.size(); ++i) {
+					c_window = (long int)(((double)dbviews.at(i)->n_markers * (1.0 - c_ld_fraction)) / 2.0);
+					if (c_window <= 0) {
+						c_window = 1;
+					}
+					c_windows.push_back(c_window);
+				}
+			}
+
+			for (unsigned int i = 0u; i < dbviews.size(); ++i) {
+				dbview = dbviews.at(i);
+				if (dbview == NULL) {
+					continue;
+				}
+
+				algorithm = AlgorithmFactory::create(c_pruning_method, c_windows.at(i));
+				algorithm->set_dbview(dbview);
+				algorithm->set_ci_method(c_ci_method);
+				algorithm->set_likelihood_density(c_l_density);
+				algorithm->set_strong_pair_cl(c_ld_ci[0]);
+				algorithm->set_strong_pair_cu(c_ld_ci[1]);
+				algorithm->set_recomb_pair_cu(c_ehr_ci);
+				algorithm->set_strong_pairs_fraction(c_ld_fraction);
+
+				algorithms.push_back(algorithm);
+			}
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+
+			Rprintf("\tD' CI computation method: %s\n", c_ci_method);
+			Rprintf("\tD' likelihood density: ");
+			if (auxiliary::strcmp_ignore_case(c_ci_method, CI::CI_WP) == 0) {
+				Rprintf("%u\n", c_l_density);
+			} else {
+				Rprintf("NA\n");
+			}
+			Rprintf("\tD' CI lower bound for strong LD: >= %g\n", c_ld_ci[0]);
+			Rprintf("\tD' CI upper bound for strong LD: >= %g\n", c_ld_ci[1]);
+			Rprintf("\tD' CI upper bound for recombination: <= %g\n", c_ehr_ci);
+			Rprintf("\tFraction of strong LD SNP pairs: >= %g\n", c_ld_fraction);
+			Rprintf("\tPruning method: %s\n", c_pruning_method);
+			Rprintf("Done (%.3f sec)\n", execution_time);
+
+
+			int i = 0;
+			Partition* partition = NULL;
+
+			cout << "Processes: " << c_processes << endl;
+
+#pragma omp parallel for num_threads(c_processes) private(i, algorithm, partition) schedule(dynamic, 1)
+			for (i = 0; i < (int)dbviews.size(); ++i) {
+#pragma omp critical
+{
+				cout << omp_get_thread_num() << " " << c_output_files.at(i) << endl;
+}
+
+				algorithm = algorithms.at(i);
+				algorithm->compute_preliminary_blocks();
+				algorithm->sort_preliminary_blocks();
+				partition = algorithm->get_block_partition();
+				partition->write(c_output_files.at(i));
+
+				delete partition;
+			}
+
+		} catch (Exception &e) {
+			error("%s", e.what());
+		}
 
 		return R_NilValue;
 	}

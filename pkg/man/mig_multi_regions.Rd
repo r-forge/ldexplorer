@@ -6,17 +6,18 @@
 	Haplotype blocks are defined based on D' coefficient of linkage disequilibrium (Gabriel et al., 2002).
 }
 \usage{
-	mig_multi_regions(phase_file, output_file, regions_start, regions_end, processes = 1, 
-	phase_file_format = "VCF", map_file = NULL, region = NULL, maf = 0.0, ci_method = "WP",
+	mig_multi_regions(phase_file, output_files, regions_start, regions_end, processes = 1, 
+	phase_file_format = "VCF", map_file = NULL, maf = 0.0, ci_method = "WP",
 	l_density = 100, ld_ci = c(0.7, 0.98), ehr_ci = 0.9, 
-	ld_fraction = 0.95, pruning_method = "MIG++", window = NULL)
+	ld_fraction = 0.95, pruning_method = "MIG++", windows = NULL)
 }
 \arguments{
 	\item{phase_file}{
 		Name of the input file with phased genotypes in VCF or HAPMAP2 format.
 	}
-	\item{output_file}{
-		Name of the output file where to store the haplotype blocks.
+	\item{output_files}{
+		The list of names of the output files where to store the haplotype blocks.
+		One output file for every region.
 	}
 	\item{regions_start}{
 		Numeric vector with start positions (in base-pairs) of the chromosomal regions to be partitioned.
@@ -65,9 +66,9 @@
 		Name of a search space pruning method.
 		Supported  methods are MIG, MIG+ and MIG++ (default).
 	}
-	\item{window}{
-		Number of SNPs within the window in MIG++ search space pruning method.
-		If NULL (default), it is calculated on the fly based on the region length and ld_fraction.
+	\item{windows}{
+		Numeric vector where every value corresponds to the according region and specifies the number of SNPs within the window in MIG++ search space pruning method.
+		If NULL (default), all values are calculated on the fly based on the corresponding region lengths and ld_fraction.
 	}
 }
 \author{Daniel Taliun, Johann Gamper, Cristian Pattaro}
@@ -77,4 +78,36 @@
 \keyword{misc}
 \keyword{utilities}
 \keyword{package}
-\examples{}
+\examples{
+\dontshow{
+    # change the workspace
+    currentWd <- getwd()
+    newWd <- paste(system.file(package="LDExplorer"), "doc", sep="/")
+    setwd(newWd)
+}
+	
+    # load LDExplorer library
+    library(LDExplorer)
+	
+    # run mig_multi_regions() function on HapMap phase II CEU data with default arguments.
+    mig_multi_regions(
+     phase_file = "HapMapII_r22_CEU_chr20_31767872_33700401.phase.gz", 
+     output_file = c("HapMapII_r22_CEU_chr20_31767872_32767871.blocks.txt", "HapMapII_r22_CEU_chr20_32767872_33700401.blocks.txt"),
+     regions_start = c(31767872, 32767872),
+     regions_end = c(32767871, 33700401),
+     processes = 2,
+     phase_file_format = "HAPMAP2",
+     map_file = "HapMapII_r22_CEU_chr20_31767872_33700401.legend.txt.gz",
+    )
+		
+\dontshow{
+    # restore previous workspace
+    setwd(currentWd)
+    
+    # all input and output files are located in the subdirectory "doc" of the installed LDExplorer package
+    message <- c("\n", rep("#", 40), "\n")
+    message <- c(message, "\nAll input and output files of this example are located in directory:\n", newWd, "\n")
+    message <- c(message, "\n", rep("#", 40),"\n")
+    cat(message, sep="")
+}
+}
