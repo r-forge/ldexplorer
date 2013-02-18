@@ -1,4 +1,4 @@
 useDynLib(LDExplorer)
 export(mig)
-export(mig_multi)
+export(mig_multi_chr)
 export(mig_multi_regions)

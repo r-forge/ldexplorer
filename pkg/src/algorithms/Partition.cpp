@@ -81,8 +81,9 @@ void Partition::write(const char* output_file_name) throw (Exception) {
 	try {
 		writer = WriterFactory::create(Writer::TEXT);
 		writer->set_file_name(output_file_name);
-		writer->open(true);
+		writer->open(false);
 
+		writer->write("# VERSION: %s\n", LDEXPLORER_VERSION);
 		writer->write("# PHASE FILE: %s\n", db->hap_file_name);
 		writer->write("# MAP FILE: %s\n", db->map_file_name == NULL ? "NA" : db->map_file_name);
 		if ((db->start_position > 0u) || (db->end_position != numeric_limits<unsigned long int>::max())) {

@@ -32,8 +32,6 @@
 
 using namespace std;
 
-#define LD_EXPLORER_VERSION "LDExplorer 1.0.0"
-
 extern "C" {
 
 	const char* validateString(SEXP value, const char* name) {
@@ -237,26 +235,6 @@ extern "C" {
 				}
 				c_value.push_back((long int)c_value_double);
 			}
-		}
-	}
-
-	void write_version(const char* output_file) throw (Exception) {
-		Writer* writer = NULL;
-
-		try{
-			writer = WriterFactory::create(Writer::TEXT);
-			writer->set_file_name(output_file);
-			writer->open(true);
-
-			writer->write("# VERSION: %s\n", LD_EXPLORER_VERSION);
-
-			writer->close();
-			delete writer;
-		} catch (Exception &e) {
-			if (writer != NULL) {
-				delete writer;
-			}
-			throw;
 		}
 	}
 
@@ -518,14 +496,12 @@ extern "C" {
 			Rprintf("Done (%.3f sec)\n", execution_time);
 
 			Rprintf("Writing results...\n");
-			start_time = clock();
-
 			Rprintf("\tOutput file: %s\n", c_output_file);
 
-			write_version(c_output_file);
+			start_time = clock();
 			partition->write(c_output_file);
-
 			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+
 			Rprintf("Done (%.3f sec)\n", execution_time);
 
 			delete partition;
@@ -751,15 +727,21 @@ extern "C" {
 			}
 		}
 
+		Algorithm* algorithm = NULL;
+		vector<Algorithm*> algorithms;
+
+		Partition* partition = NULL;
+		vector<Partition*> partitions;
+
 		try {
 			clock_t start_time = 0;
+			double start_time_omp = 0.0;
 			double execution_time = 0.0;
 
 			Db db;
 			const DbView* dbview = NULL;
 			vector<const DbView*> dbviews;
-			Algorithm* algorithm = NULL;
-			vector<Algorithm*> algorithms;
+			int omp_i = 0;
 
 			Rprintf("Loading data...\n");
 
@@ -794,20 +776,18 @@ extern "C" {
 			}
 
 			for (unsigned int i = 0u; i < dbviews.size(); ++i) {
+				algorithm = NULL;
 				dbview = dbviews.at(i);
-				if (dbview == NULL) {
-					continue;
+				if (dbview != NULL) {
+					algorithm = AlgorithmFactory::create(c_pruning_method, c_windows.at(i));
+					algorithm->set_dbview(dbview);
+					algorithm->set_ci_method(c_ci_method);
+					algorithm->set_likelihood_density(c_l_density);
+					algorithm->set_strong_pair_cl(c_ld_ci[0]);
+					algorithm->set_strong_pair_cu(c_ld_ci[1]);
+					algorithm->set_recomb_pair_cu(c_ehr_ci);
+					algorithm->set_strong_pairs_fraction(c_ld_fraction);
 				}
-
-				algorithm = AlgorithmFactory::create(c_pruning_method, c_windows.at(i));
-				algorithm->set_dbview(dbview);
-				algorithm->set_ci_method(c_ci_method);
-				algorithm->set_likelihood_density(c_l_density);
-				algorithm->set_strong_pair_cl(c_ld_ci[0]);
-				algorithm->set_strong_pair_cu(c_ld_ci[1]);
-				algorithm->set_recomb_pair_cu(c_ehr_ci);
-				algorithm->set_strong_pairs_fraction(c_ld_fraction);
-
 				algorithms.push_back(algorithm);
 			}
 			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
@@ -826,29 +806,77 @@ extern "C" {
 			Rprintf("\tPruning method: %s\n", c_pruning_method);
 			Rprintf("Done (%.3f sec)\n", execution_time);
 
+			Rprintf("Processing data (%d processes)...\n", c_processes);
 
-			int i = 0;
-			Partition* partition = NULL;
+			start_time_omp = omp_get_wtime();
 
-			cout << "Processes: " << c_processes << endl;
-
-#pragma omp parallel for num_threads(c_processes) private(i, algorithm, partition) schedule(dynamic, 1)
-			for (i = 0; i < (int)dbviews.size(); ++i) {
-#pragma omp critical
-{
-				cout << omp_get_thread_num() << " " << c_output_files.at(i) << endl;
-}
-
-				algorithm = algorithms.at(i);
-				algorithm->compute_preliminary_blocks();
-				algorithm->sort_preliminary_blocks();
-				partition = algorithm->get_block_partition();
-				partition->write(c_output_files.at(i));
-
-				delete partition;
+#pragma omp parallel for num_threads(c_processes) private(omp_i, algorithm) schedule(dynamic, 1)
+			for (omp_i = 0; omp_i < (int)algorithms.size(); ++omp_i) {
+				algorithm = algorithms.at(omp_i);
+				if (algorithm != NULL) {
+					algorithm->compute_preliminary_blocks();
+					algorithm->sort_preliminary_blocks();
+				}
 			}
 
+			for (unsigned int i = 0; i < algorithms.size(); ++i) {
+				partition = NULL;
+				algorithm = algorithms.at(i);
+				if (algorithm != NULL) {
+					partition = algorithm->get_block_partition();
+				}
+				partitions.push_back(partition);
+			}
+			execution_time = omp_get_wtime() - start_time_omp;
+
+			Rprintf("Done (%.3f sec)\n", execution_time);
+
+			Rprintf("Writing results...\n");
+
+			start_time = clock();
+			for (unsigned int i = 0; i < partitions.size(); ++i) {
+				partition = partitions.at(i);
+				if (partition != NULL) {
+					partition->write(c_output_files.at(i));
+				}
+			}
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+
+			Rprintf("Done (%.3f sec)\n", execution_time);
+
+			for (unsigned int i = 0u; i < partitions.size(); ++i) {
+				partition = partitions.at(i);
+				if (partition != NULL) {
+					delete partition;
+				}
+			}
+			partitions.clear();
+
+			for (unsigned int i = 0u; i < algorithms.size(); ++i) {
+				algorithm = algorithms.at(i);
+				if (algorithm != NULL) {
+					delete algorithm;
+				}
+			}
+			algorithms.clear();
+
 		} catch (Exception &e) {
+			for (unsigned int i = 0u; i < partitions.size(); ++i) {
+				partition = partitions.at(i);
+				if (partition != NULL) {
+					delete partition;
+				}
+			}
+			partitions.clear();
+
+			for (unsigned int i = 0u; i < algorithms.size(); ++i) {
+				algorithm = algorithms.at(i);
+				if (algorithm != NULL) {
+					delete algorithm;
+				}
+			}
+			algorithms.clear();
+
 			error("%s", e.what());
 		}
 

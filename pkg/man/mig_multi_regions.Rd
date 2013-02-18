@@ -3,6 +3,7 @@
 \title{Memory-efficient Implementation of Gabriel et al. 2002 haplotype block definition}
 \description{
 	Function for the efficient whole-genome haplotype block partitioning.
+	It is analogous to \code{\link{mig}} and allows to specify several chromosomal regions at once.
 	Haplotype blocks are defined based on D' coefficient of linkage disequilibrium (Gabriel et al., 2002).
 }
 \usage{
@@ -27,7 +28,7 @@
 	}
 	\item{processes}{
 		An integer >= 1, which indicates the number of parallel processes. 
-		All processes are created on the same machine and shares the main memory.
+		All parallel processes are created on the same machine and shares the main memory.
 	}
 	\item{phase_file_format}{
 		Format of the phase_file: VCF (default) or HAPMAP2.
@@ -97,7 +98,18 @@
      regions_end = c(32767871, 33700401),
      processes = 2,
      phase_file_format = "HAPMAP2",
-     map_file = "HapMapII_r22_CEU_chr20_31767872_33700401.legend.txt.gz",
+     map_file = "HapMapII_r22_CEU_chr20_31767872_33700401.legend.txt.gz"
+    )
+    
+    # show contents of the output files
+    file.show(
+     "HapMapII_r22_CEU_chr20_31767872_32767871.blocks.txt",
+     title="HapMapII_r22_CEU_chr20_31767872_32767871.blocks.txt"
+    )
+    
+    file.show(
+     "HapMapII_r22_CEU_chr20_32767872_33700401.blocks.txt",
+     title="HapMapII_r22_CEU_chr20_32767872_33700401.blocks.txt"
     )
 		
 \dontshow{

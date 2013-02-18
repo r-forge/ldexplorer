@@ -124,9 +124,28 @@
 		The MIG++ has low memory requirements and significantly better runtime compared to MIG and MIG+.  
 	}
 }
+\section{Output File}{
+	The output file consists of the following columns:
+	\tabular{ll}{
+		BLOCK_NAME \tab Generated unique block name\cr
+		FIRST_SNP \tab Name of the first SNP in block\cr
+		LAST_SNP \tab Name of the last SNP in block\cr
+		FIRST_SNP_ID \tab Index of the first SNP in block with respect to the filtered SNPs\cr
+		LAST_SNP_ID \tab Index of the last SNP in block with respect to the filtered SNPs\cr
+		START_BP \tab The base-pair position of the first SNP in block\cr
+		END_BP \tab The base-pair position of the last SNP in block\cr
+		N_SNPS \tab Number of SNPs in block\cr
+		N_HAPS \tab Number of haplotypes in block\cr
+		N_UNIQUE_HAPS \tab Number of unique haplotypes in block\cr
+		N_COMMON_HAPS \tab Number of common (which appear more than once) haplotypes in block\cr
+		N_HAPS_DIVERSITY \tab The haplotype diversity in block (Patil et al., 2001). 1 - low diversity, 0 - high diversity. 
+	}
+}
 \references{
 	Zapata, C., Alvarez, G., Carollo, C. (1997) Approximate variance of the standardized measure of gametic disequilibrium D'. \emph{American Journal of Human Genetics}, \bold{61}(3), 771--774.
 
+	Patil, N. et al. (2001) Blocks of Limited Haplotype Diversity Revealed by High-Resolution Scanning of Human Chromosome 21. \emph{Science}, \bold{294}(5547), 1719--1723.
+	
 	Gabriel, S. B. et al. (2002) The Structure of Haplotype Blocks in the Human Genome. \emph{Science}, \bold{296}(5576), 2225--2229.
 	
 	Wall, J. D. and Pritchard, J. K. (2003) Assessing the performance of the haplotype block model of linkage disequilibrium. \emph{American Journal of Human Genetics}, \bold{73}(3), 502--515.
@@ -156,7 +175,7 @@
      map_file = "HapMapII_r22_CEU_chr20_31767872_33700401.legend.txt.gz"
     )
 	
-    # show contents of the input script
+    # show contents of the output file
     file.show(
      "HapMapII_r22_CEU_chr20_31767872_33700401.blocks.txt",
      title="HapMapII_r22_CEU_chr20_31767872_33700401.blocks.txt"
@@ -166,11 +185,9 @@
     mig(
      phase_file = "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.vcf.gz", 
      output_file = "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks.txt",
-     pruning_method = "MIG+",
-     ci_method = "AV"
     )
 	
-    # show contents of the input script
+    # show contents of the output file
     file.show(
      "1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks.txt",
      title="1000G_phase1_v3_20101123_CEU_chr2_89153688_89307566.blocks.txt"

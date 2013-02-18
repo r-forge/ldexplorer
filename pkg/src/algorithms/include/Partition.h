@@ -23,6 +23,7 @@
 #include <map>
 #include <vector>
 
+#include "../../LDExplorer.h"
 #include "../../writer/include/WriterFactory.h"
 #include "../../db/include/DbView.h"
 
