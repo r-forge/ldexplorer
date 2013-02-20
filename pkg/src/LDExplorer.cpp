@@ -741,6 +741,7 @@ extern "C" {
 			Db db;
 			const DbView* dbview = NULL;
 			vector<const DbView*> dbviews;
+			bool all_empty = true;
 			int omp_i = 0;
 
 			Rprintf("Loading data...\n");
@@ -752,13 +753,31 @@ extern "C" {
 			for (unsigned int i = 0u; i < c_output_files.size(); ++i) {
 				dbview = db.create_view(c_maf, c_regions_start.at(i), c_regions_end.at(i));
 				dbviews.push_back(dbview);
+				if ((all_empty == true) && (dbview != NULL)) {
+					all_empty = false;
+				}
 			}
 			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
 
+			if (all_empty == true) {
+				Rprintf("\tNot enough SNPs (<= 1) in any of the specified regions.\n");
+				Rprintf("Done (%.3f sec)\n", execution_time);
+				return R_NilValue;
+			}
+
 			Rprintf("\tPhase file: %s\n", c_phase_file);
 			Rprintf("\tMap file: %s\n", c_map_file == NULL ? "NA" : c_map_file);
-			Rprintf("\tAll SNPs: %u\n", db.get_all_n_markers());
-			Rprintf("\tHaplotypes: %u\n", db.get_n_haplotypes());
+			Rprintf("\tRegions:\n");
+			for (unsigned int i = 0u; i < dbviews.size(); ++i) {
+				dbview = dbviews.at(i);
+				if (dbview != NULL) {
+					Rprintf("\t- Region: [%u, %u]\n", c_regions_start.at(i), c_regions_end.at(i));
+					Rprintf("\t--  MAF filter: > %g\n", dbview->maf_threshold);
+					Rprintf("\t--  All SNPs: %u\n", dbview->n_unfiltered_markers);
+					Rprintf("\t--  Filtered SNPs: %u\n", dbview->n_markers);
+					Rprintf("\t--  Haplotypes: %u\n", dbview->n_haplotypes);
+				}
+			}
 			Rprintf("\tUsed memory (Mb): %.3f\n", db.get_memory_usage());
 			Rprintf("Done (%.3f sec)\n", execution_time);
 
@@ -767,9 +786,13 @@ extern "C" {
 			start_time = clock();
 			if (c_windows.size() == 0) {
 				for (unsigned int i = 0u; i < dbviews.size(); ++i) {
-					c_window = (long int)(((double)dbviews.at(i)->n_markers * (1.0 - c_ld_fraction)) / 2.0);
-					if (c_window <= 0) {
-						c_window = 1;
+					c_window = numeric_limits<long int>::min();
+					dbview = dbviews.at(i);
+					if (dbview != NULL) {
+						c_window = (long int)(((double)dbview->n_markers * (1.0 - c_ld_fraction)) / 2.0);
+						if (c_window <= 0) {
+							c_window = 1;
+						}
 					}
 					c_windows.push_back(c_window);
 				}
@@ -804,11 +827,32 @@ extern "C" {
 			Rprintf("\tD' CI upper bound for recombination: <= %g\n", c_ehr_ci);
 			Rprintf("\tFraction of strong LD SNP pairs: >= %g\n", c_ld_fraction);
 			Rprintf("\tPruning method: %s\n", c_pruning_method);
+
+
+			Rprintf("\tWindows: ");
+			if (auxiliary::strcmp_ignore_case(c_pruning_method, Algorithm::ALGORITHM_MIGPP) == 0) {
+				Rprintf("\n");
+				for (unsigned int i = 0u; i < dbviews.size(); ++i) {
+					dbview = dbviews.at(i);
+					if (dbview != NULL) {
+						Rprintf("\t- Region: [%u, %u]\n", c_regions_start.at(i), c_regions_end.at(i));
+						Rprintf("\t-- Window: %ld\n", c_windows.at(i));
+					}
+				}
+			} else {
+				Rprintf("NA\n", c_window);
+			}
+
+
 			Rprintf("Done (%.3f sec)\n", execution_time);
 
 			Rprintf("Processing data (%d processes)...\n", c_processes);
 
+#ifdef	_OPENMP
 			start_time_omp = omp_get_wtime();
+#else
+			start_time = clock();
+#endif
 
 #pragma omp parallel for num_threads(c_processes) private(omp_i, algorithm) schedule(dynamic, 1)
 			for (omp_i = 0; omp_i < (int)algorithms.size(); ++omp_i) {
@@ -827,14 +871,35 @@ extern "C" {
 				}
 				partitions.push_back(partition);
 			}
-			execution_time = omp_get_wtime() - start_time_omp;
 
+#ifdef	_OPENMP
+			execution_time = omp_get_wtime() - start_time_omp;
+#else
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+#endif
+
+			for (unsigned int i = 0u; i < dbviews.size(); ++i) {
+				dbview = dbviews.at(i);
+				if (dbview != NULL) {
+					algorithm = algorithms.at(i);
+					partition = partitions.at(i);
+					Rprintf("\t- Region: [%u, %u]\n", c_regions_start.at(i), c_regions_end.at(i));
+					Rprintf("\t-- Preliminary haplotype blocks: %u\n", algorithm->get_n_preliminary_blocks());
+					Rprintf("\t-- Final haplotype blocks: %u\n", partition->get_n_blocks());
+					Rprintf("\t-- Memory used for preliminary haplotype blocks (Mb): %.3g\n", algorithm->get_memory_usage_preliminary_blocks());
+					Rprintf("\t-- Memory used for final haplotype blocks (Mb): %.3g\n", partition->get_memory_usage());
+					Rprintf("\t-- Memory used by algorithm (Mb): %.3g\n", algorithm->get_memory_usage());
+					Rprintf("\t-- Total used memory (Mb): %.3g\n", algorithm->get_memory_usage_preliminary_blocks() + partition->get_memory_usage() + algorithm->get_memory_usage());
+				}
+			}
 			Rprintf("Done (%.3f sec)\n", execution_time);
 
 			Rprintf("Writing results...\n");
 
 			start_time = clock();
 			for (unsigned int i = 0; i < partitions.size(); ++i) {
+				Rprintf("\tOutput file: %s\n", c_output_files.at(i));
+
 				partition = partitions.at(i);
 				if (partition != NULL) {
 					partition->write(c_output_files.at(i));

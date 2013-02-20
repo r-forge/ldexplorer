@@ -3,7 +3,7 @@
 \title{Memory-efficient Implementation of Gabriel et al. 2002 haplotype block definition}
 \description{
 	Function for the efficient whole-genome haplotype block partitioning.
-	It is analogous to \code{\link{mig}} and allows to specify several chromosomal regions at once.
+	It is analogous to \code{\link{mig}} and allows to specify several chromosomal regions at once and process them in parallel.
 	Haplotype blocks are defined based on D' coefficient of linkage disequilibrium (Gabriel et al., 2002).
 }
 \usage{
@@ -71,6 +71,10 @@
 		Numeric vector where every value corresponds to the according region and specifies the number of SNPs within the window in MIG++ search space pruning method.
 		If NULL (default), all values are calculated on the fly based on the corresponding region lengths and ld_fraction.
 	}
+}
+\note{
+	The functionality is implemented in C/C++ using OpenMP.
+	If the package was compiled using the compiler version without OpenMP support, then the regions will be processed sequentially in a single thread.
 }
 \author{Daniel Taliun, Johann Gamper, Cristian Pattaro}
 \seealso{

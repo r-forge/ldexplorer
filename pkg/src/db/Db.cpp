@@ -392,6 +392,10 @@ void Db::load_vcf(unsigned long int start_position, unsigned long int end_positi
 				throw Exception(__FILE__, __LINE__, "The chromosomal position '%s' on line %d in '%s' file could not be parsed to unsigned integer.", tokens[1u], line_number, hap_file_name);
 			}
 
+			if ((all_n_markers > 0) && (all_positions[all_n_markers - 1u] > all_positions[all_n_markers])) {
+				throw Exception(__FILE__, __LINE__, "The chromosomal positions in '%s' file are not in ascending order.", hap_file_name);
+			}
+
 			/* tokens[7] -- check info field. if variant type is specified, then it must be SNP. */
 			while ((token = auxiliary::strtok(&(tokens[7u]), VCF_INFO_FIELD_SEPARATOR)) != NULL) {
 				auxiliary::trim_start(token);
@@ -654,6 +658,10 @@ void Db::load_vcf() throw (Exception) {
 				throw Exception(__FILE__, __LINE__, "The chromosomal position '%s' on line %d in '%s' file could not be parsed to unsigned integer.", tokens[1u], line_number, hap_file_name);
 			}
 
+			if ((all_n_markers > 0) && (all_positions[all_n_markers - 1u] > all_positions[all_n_markers])) {
+				throw Exception(__FILE__, __LINE__, "The chromosomal positions in '%s' file are not in ascending order.", hap_file_name);
+			}
+
 			/* tokens[7] -- check info field. if variant type is specified, then it must be SNP. */
 			while ((token = auxiliary::strtok(&(tokens[7u]), VCF_INFO_FIELD_SEPARATOR)) != NULL) {
 				auxiliary::trim_start(token);
@@ -872,6 +880,10 @@ void Db::load_hapmap2(unsigned long int start_position, unsigned long int end_po
 
 			if (!auxiliary::to_ulong_int(tokens[1u], &position)) {
 				throw Exception(__FILE__, __LINE__, "The chromosomal position '%s' on line %d in '%s' file could not be parsed to unsigned integer.", tokens[1u], line_number, map_file_name);
+			}
+
+			if ((all_n_markers > 0) && (all_positions[all_n_markers - 1u] > all_positions[all_n_markers])) {
+				throw Exception(__FILE__, __LINE__, "The chromosomal positions in '%s' file are not in ascending order.", map_file_name);
 			}
 
 			if (strlen(tokens[2u]) == 1u) {
@@ -1134,6 +1146,10 @@ void Db::load_hapmap2() throw (Exception) {
 
 			if (!auxiliary::to_ulong_int(tokens[1u], &(all_positions[all_n_markers]))) {
 				throw Exception(__FILE__, __LINE__, "The chromosomal position '%s' on line %d in '%s' file could not be parsed to unsigned integer.", tokens[1u], line_number, map_file_name);
+			}
+
+			if ((all_n_markers > 0) && (all_positions[all_n_markers - 1u] > all_positions[all_n_markers])) {
+				throw Exception(__FILE__, __LINE__, "The chromosomal positions in '%s' file are not in ascending order.", map_file_name);
 			}
 
 			if (strlen(tokens[2u]) == 1u) {

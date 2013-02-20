@@ -3,7 +3,7 @@
 \title{Memory-efficient Implementation of Gabriel et al. 2002 haplotype block definition}
 \description{
 	Function for the efficient whole-genome haplotype block partitioning.
-	It is analogous to \code{\link{mig}} and allows to specify several input files (chromosomes) at once.
+	It is analogous to \code{\link{mig}} and allows to specify several input files (chromosomes) at once and process them in parallel.
 	Haplotype blocks are defined based on D' coefficient of linkage disequilibrium (Gabriel et al., 2002).
 }
 \usage{
@@ -85,4 +85,3 @@
 \keyword{misc}
 \keyword{utilities}
 \keyword{package}
-\examples{}
