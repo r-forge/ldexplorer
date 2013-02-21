@@ -117,7 +117,7 @@ mig_multi_chr <- function(phase_files, output_files, processes = 1, phase_file_f
 		
 		require(parallel, quietly = TRUE)
 	
-		clusters <- makeCluster(rep("localhost", 2), type="SOCK")
+		clusters <- makeCluster(rep("localhost", processes), type="SOCK")
 		ldexplorer_package_path <- dirname(.path.package("LDExplorer"))
 		clusterExport(clusters, "ldexplorer_package_path", envir=environment())
 		clusterEvalQ(clusters, .libPaths(union(ldexplorer_package_path, .libPaths())))
