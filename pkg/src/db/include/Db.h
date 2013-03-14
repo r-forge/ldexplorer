@@ -46,6 +46,8 @@ private:
 	static const char VCF_INFO_FIELD_SEPARATOR;
 	static const char* VCF_VARIANT_TYPE;
 	static const char* VCF_SNP_TYPE;
+	static const char* VCF_PASS;
+	static const char* VCF_MISSING;
 	static const unsigned int VCF_MANDATORY_COLUMNS_SIZE;
 	static const char* vcf_mandatory_columns[];
 

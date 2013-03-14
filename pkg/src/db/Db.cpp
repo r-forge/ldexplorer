@@ -36,6 +36,8 @@ const char* Db::VCF_FORMAT = "FORMAT";
 const char Db::VCF_INFO_FIELD_SEPARATOR = ';';
 const char* Db::VCF_VARIANT_TYPE = "VT";
 const char* Db::VCF_SNP_TYPE = "SNP";
+const char* Db::VCF_PASS = "PASS";
+const char* Db::VCF_MISSING = ".";
 const unsigned int Db::VCF_MANDATORY_COLUMNS_SIZE = 9u;
 const char* Db::vcf_mandatory_columns[VCF_MANDATORY_COLUMNS_SIZE] = {
 		VCF_CHROM, VCF_POS, VCF_ID, VCF_REF, VCF_ALT, VCF_QUAL, VCF_FILTER, VCF_INFO, VCF_FORMAT
@@ -378,6 +380,11 @@ void Db::load_vcf(unsigned long int start_position, unsigned long int end_positi
 				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on line %d in '%s' file is not equal to the expected (%d).", column_number, line_number, hap_file_name, total_column_number);
 			}
 
+			/* tokens[6] -- filter field. check if all filteres are passed. Must contain "PASS" of "." (if no filters were applied). */
+			if ((auxiliary::strcmp_ignore_case(tokens[6u], VCF_PASS) != 0) && (auxiliary::strcmp_ignore_case(tokens[6u], VCF_MISSING) != 0)) {
+				continue;
+			}
+
 			/* tokens[0] -- chromosome. check if unique accross all VCF file. must be one file per chromosome. */
 			if (!(chromosome.*chromosome.check)(tokens[0u])) {
 				throw Exception(__FILE__, __LINE__, "Unexpected chromosome '%s' (expected chromosome is '%s') was found on line %d in '%s' file.", tokens[0u], chromosome.get_value(), line_number, hap_file_name);
@@ -642,6 +649,11 @@ void Db::load_vcf() throw (Exception) {
 
 			if (column_number != total_column_number) {
 				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on line %d in '%s' file is not equal to the expected (%d).", column_number, line_number, hap_file_name, total_column_number);
+			}
+
+			/* tokens[6] -- filter field. check if all filteres are passed. Must contain "PASS" of "." (if no filters were applied). */
+			if ((auxiliary::strcmp_ignore_case(tokens[6u], VCF_PASS) != 0) && (auxiliary::strcmp_ignore_case(tokens[6u], VCF_MISSING) != 0)) {
+				continue;
 			}
 
 			/* tokens[0] -- chromosome. check if unique accross all VCF file. must be one file per chromosome. */

@@ -27,6 +27,7 @@
 	}
 	\item{phase_file_format}{
 		Format of the phase_files: VCF (default) or HAPMAP2.
+		If VCF, then only SNPs with "PASS" or "." in the FILTER field are considered.
 	}
 	\item{map_files}{
 		The list of names of the map files with base-pair positions of each SNP.

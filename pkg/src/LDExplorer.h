@@ -20,6 +20,6 @@
 #ifndef LDEXPLORER_H_
 #define LDEXPLORER_H_
 
-#define LDEXPLORER_VERSION "LDExplorer 1.0.0"
+#define LDEXPLORER_VERSION "LDExplorer 1.0.1"
 
 #endif
