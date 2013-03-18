@@ -21,7 +21,10 @@
 #include <limits>
 #include <math.h>
 #include <time.h>
+
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 #include "algorithms/include/CIFactory.h"
 #include "algorithms/include/AlgorithmFactory.h"
@@ -854,7 +857,9 @@ extern "C" {
 			start_time = clock();
 #endif
 
+#ifdef _OPENMP
 #pragma omp parallel for num_threads(c_processes) private(omp_i, algorithm) schedule(dynamic, 1)
+#endif
 			for (omp_i = 0; omp_i < (int)algorithms.size(); ++omp_i) {
 				algorithm = algorithms.at(omp_i);
 				if (algorithm != NULL) {
