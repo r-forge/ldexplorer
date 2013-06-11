@@ -17,9 +17,18 @@
 # along with LDExplorer.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-include $(R_MAKECONF)
-
-applib:	CI.o CIWP.o CIAV.o CIFactory.o Algorithm.o AlgorithmMIG.o AlgorithmMIGP.o AlgorithmMIGPP.o AlgorithmFactory.o Partition.o LD.o
-
-clean:  
-	@-rm -f *.o
+ld <- function(phase_file, snps_file, output_file, window = 500000, coefficient = "dprime", maf = 0.0, gzip = TRUE) {
+	if (missing(phase_file)) {
+		stop("The 'phase_file' argument is missing.");
+	}
+	
+	if (missing(snps_file)) {
+		stop("The 'snps_file' argument is missing.");
+	}
+	
+	if (missing(output_file)) {
+		stop("The 'output_file' argument is missing.");
+	}
+	
+	result <- .Call("ld", phase_file, snps_file, output_file, window, coefficient, maf, gzip);
+}

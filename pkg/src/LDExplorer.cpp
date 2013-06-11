@@ -28,6 +28,7 @@
 
 #include "algorithms/include/CIFactory.h"
 #include "algorithms/include/AlgorithmFactory.h"
+#include "algorithms/include/LD.h"
 #include "db/include/Db.h"
 
 #include <R.h>
@@ -36,6 +37,22 @@
 using namespace std;
 
 extern "C" {
+
+	int validateBoolean(SEXP value, const char* name) {
+		if (!isLogical(value)) {
+			error("'%s' argument is not a boolean.", name);
+		}
+
+		if (length(value) <= 0) {
+			error("'%s' argument contains no values.", name);
+		}
+
+		if (length(value) > 1) {
+			error("'%s' argument contains multiple values.", name);
+		}
+
+		return LOGICAL(value)[0];
+	}
 
 	const char* validateString(SEXP value, const char* name) {
 		if (!isString(value)) {
@@ -322,7 +339,7 @@ extern "C" {
 			c_ci_method = validateString(ci_method, "ci_method");
 			if ((auxiliary::strcmp_ignore_case(c_ci_method, CI::CI_WP) != 0) &&
 					(auxiliary::strcmp_ignore_case(c_ci_method, CI::CI_AV) != 0)) {
-				error("The method to compute the confidence interval (CI) of D', specified in '%s' argument, must be '%s' or '%s'.", "file_format", CI::CI_WP, CI::CI_AV);
+				error("The method to compute the confidence interval (CI) of D', specified in '%s' argument, must be '%s' or '%s'.", "ci_method", CI::CI_WP, CI::CI_AV);
 			}
 		} else {
 			error("'%s' argument is NULL.", "ci_method");
@@ -646,7 +663,7 @@ extern "C" {
 			c_ci_method = validateString(ci_method, "ci_method");
 			if ((auxiliary::strcmp_ignore_case(c_ci_method, CI::CI_WP) != 0) &&
 					(auxiliary::strcmp_ignore_case(c_ci_method, CI::CI_AV) != 0)) {
-				error("The method to compute the confidence interval (CI) of D', specified in '%s' argument, must be '%s' or '%s'.", "file_format", CI::CI_WP, CI::CI_AV);
+				error("The method to compute the confidence interval (CI) of D', specified in '%s' argument, must be '%s' or '%s'.", "ci_method", CI::CI_WP, CI::CI_AV);
 			}
 		} else {
 			error("'%s' argument is NULL.", "ci_method");
@@ -947,6 +964,128 @@ extern "C" {
 			}
 			algorithms.clear();
 
+			error("%s", e.what());
+		}
+
+		return R_NilValue;
+	}
+
+	SEXP ld(SEXP phase_file, SEXP snps_file, SEXP output_file, SEXP window, SEXP coefficient, SEXP maf, SEXP gzip) {
+		const char* c_phase_file = NULL;
+		const char* c_snps_file = NULL;
+		const char* c_output_file = NULL;
+		long int c_window = numeric_limits<long int>::min();
+		const char* c_coefficient = NULL;
+		double c_maf = numeric_limits<double>::quiet_NaN();
+		int c_gzip = 0;
+
+//		Validate phase_file argument.
+		if (!isNull(phase_file)) {
+			c_phase_file = validateString(phase_file, "phase_file");
+		} else {
+			error("'%s' argument is NULL.", "phase_file");
+		}
+
+//		Validate phase_file argument.
+		if (!isNull(snps_file)) {
+			c_snps_file = validateString(snps_file, "snps_file");
+		} else {
+			error("'%s' argument is NULL.", "snps_file");
+		}
+
+//		Validate output_file argument.
+		if (!isNull(output_file)) {
+			c_output_file = validateString(output_file, "output_file");
+		} else {
+			error("'%s' argument is NULL.", "output_file");
+		}
+
+//		Validate window argument.
+		if (!isNull(window)) {
+			c_window = validateInteger(window, "window");
+			if (c_window <= 0) {
+				error("The window size, specified in '%s' argument, must be strictly greater than 0 base pairs.", "window");
+			}
+		} else {
+			error("'%s' argument is NULL.", "window");
+		}
+
+//		Validate coefficient argument.
+		if (!isNull(coefficient)) {
+			c_coefficient = validateString(coefficient, "coefficient");
+			if ((auxiliary::strcmp_ignore_case(c_coefficient, LD::D) != 0) &&	(auxiliary::strcmp_ignore_case(c_coefficient, LD::DPRIME) != 0) && (auxiliary::strcmp_ignore_case(c_coefficient, LD::R2) != 0)) {
+				error("The LD coefficient, specified in '%s' argument, must be '%s', '%s' or '%s'.", "coefficient", LD::D, LD::DPRIME, LD::R2);
+			}
+		} else {
+			error("'%s' argument is NULL.", "coefficient");
+		}
+
+//		Validate maf argument.
+		if (!isNull(maf)) {
+			c_maf = validateDouble(maf, "maf");
+			if ((c_maf < 0.0) || (c_maf > 0.5)) {
+				error("The minor allele frequency, specified in '%s' argument, must be in [0, 0.5] interval.", "maf");
+			}
+		} else {
+			error("'%s' argument is NULL.", "maf");
+		}
+
+//		Validate gzip argument.
+		if (!isNull(gzip)) {
+			c_gzip = validateBoolean(gzip, "gzip");
+		} else {
+			error("'%s' argument is NULL.", "gzip");
+		}
+
+		try {
+			clock_t start_time = 0;
+			double execution_time = 0.0;
+
+			Db db;
+			const DbView* dbview = NULL;
+			LD ld;
+
+			Rprintf("Loading data...\n");
+
+			start_time = clock();
+			db.set_hap_file(c_phase_file);
+			db.load(0u, numeric_limits<unsigned long int>::max(), Db::VCF);
+			dbview = db.create_view(c_maf, 0u, numeric_limits<unsigned long int>::max());
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+
+			if (dbview == NULL) {
+				Rprintf("\tNot enough SNPs (<= 1) in the specified region.\n");
+				Rprintf("Done (%.3f sec)\n", execution_time);
+				return R_NilValue;
+			}
+
+			Rprintf("\tPhase file: %s\n", c_phase_file);
+			Rprintf("\tMAF filter: > %g\n", dbview->maf_threshold);
+			Rprintf("\tAll SNPs: %u\n", dbview->n_unfiltered_markers);
+			Rprintf("\tFiltered SNPs: %u\n", dbview->n_markers);
+			Rprintf("\tHaplotypes: %u\n", dbview->n_haplotypes);
+			Rprintf("\tUsed memory (Mb): %.3f\n", db.get_memory_usage());
+			Rprintf("Done (%.3f sec)\n", execution_time);
+
+			ld.set_dbview(dbview);
+
+			Rprintf("Calculating LD coefficients...\n");
+
+			Rprintf("\tLD coefficient: %s\n", c_coefficient);
+			Rprintf("\tWindow: +/-%d bp\n", c_window);
+
+			start_time = clock();
+			ld.load_markers(c_snps_file);
+			ld.index_db_markers();
+			ld.compute_ld(c_output_file, c_coefficient, c_window, c_gzip);
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+
+			Rprintf("\tInput SNPs: %u\n", ld.get_n_snps());
+			Rprintf("\tOuptu file: %s\n", c_output_file);
+			Rprintf("\tUsed memory (Mb): %.3f\n", ld.get_used_memory());
+			Rprintf("Done (%.3f sec)\n", execution_time);
+
+		} catch (Exception &e) {
 			error("%s", e.what());
 		}
 
