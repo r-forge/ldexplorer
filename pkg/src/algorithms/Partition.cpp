@@ -24,9 +24,12 @@ const unsigned int Partition::BLOCKS_SIZE_INCREMENT = 1000;
 
 Partition::Partition(const DbView* db) throw (Exception) : db(db),
 		blocks(NULL), n_blocks(0u), blocks_size(BLOCKS_SIZE_INIT),
+		rsq_blocks(false),
 		ci_method(NULL), likelihood_density(0u),
 		strong_pair_cl(numeric_limits<double>::quiet_NaN()), strong_pair_cu(numeric_limits<double>::quiet_NaN()),
-		recomb_pair_cu(numeric_limits<double>::quiet_NaN()), strong_pairs_fraction(numeric_limits<double>::quiet_NaN()),
+		recomb_pair_cu(numeric_limits<double>::quiet_NaN()),
+		strong_pair_rsq(numeric_limits<double>::quiet_NaN()),
+		strong_pairs_fraction(numeric_limits<double>::quiet_NaN()),
 		pruning_method(NULL), window(0u) {
 
 	blocks = (block*)malloc(blocks_size * sizeof(block));
@@ -95,15 +98,20 @@ void Partition::write(const char* output_file_name) throw (Exception) {
 		writer->write("# ALL SNPs: %u\n", db->n_unfiltered_markers);
 		writer->write("# FILTERED SNPs: %u\n",db->n_markers);
 		writer->write("# HAPLOTYPES: %u\n", db->n_haplotypes);
-		writer->write("# D' CI COMPUTATION METHOD: %s\n", ci_method);
-		if (likelihood_density > 0u) {
-			writer->write("# D' LIKELIHOOD DENSITY: %u\n", likelihood_density);
+
+		if (!rsq_blocks) {
+			writer->write("# D' CI COMPUTATION METHOD: %s\n", ci_method);
+			if (likelihood_density > 0u) {
+				writer->write("# D' LIKELIHOOD DENSITY: %u\n", likelihood_density);
+			} else {
+				writer->write("# D' LIKELIHOOD DENSITY: NA\n");
+			}
+			writer->write("# D' CI LOWER BOUND FOR STRONG LD: >= %g\n", strong_pair_cl);
+			writer->write("# D' CI UPPER BOUND FOR STRONG LD: >= %g\n", strong_pair_cu);
+			writer->write("# D' CI UPPER BOUND FOR RECOMBINATION: <= %g\n", recomb_pair_cu);
 		} else {
-			writer->write("# D' LIKELIHOOD DENSITY: NA\n");
+			writer->write("# r^2 LOWER BOUND FOR STRONG LD: >= %g\n", strong_pair_rsq);
 		}
-		writer->write("# D' CI LOWER BOUND FOR STRONG LD: >= %g\n", strong_pair_cl);
-		writer->write("# D' CI UPPER BOUND FOR STRONG LD: >= %g\n", strong_pair_cu);
-		writer->write("# D' CI UPPER BOUND FOR RECOMBINATION: <= %g\n", recomb_pair_cu);
 		writer->write("# FRACTION OF STRONG LD SNP PAIRS: >= %g\n", strong_pairs_fraction);
 		writer->write("# PRUNING METHOD: %s\n", pruning_method);
 		if (window > 0u) {

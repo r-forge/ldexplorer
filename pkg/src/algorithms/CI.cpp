@@ -162,6 +162,44 @@ double CI::get_r(unsigned int marker_a, unsigned int marker_b) {
 	return observed_d / sqrt(observed_major_af_a * (1.0 - observed_major_af_a) * observed_major_af_b * (1.0 - observed_major_af_b));
 }
 
+double CI::get_rsq(unsigned int marker_a, unsigned int marker_b) {
+	observed_haplotype_a = db->haplotypes[marker_a];
+	observed_haplotype_b = db->haplotypes[marker_b];
+
+	n_observed_haplotype_ref_a_ref_b = n_observed_haplotype_ref_a_alt_b = n_observed_haplotype_alt_a_ref_b = n_observed_haplotype_alt_a_alt_b = 0u;
+
+	observed_ref_allele_a = db->major_alleles[marker_a];
+	observed_alt_allele_a = db->minor_alleles[marker_a];
+
+	observed_ref_allele_b = db->major_alleles[marker_b];
+	observed_alt_allele_b = db->minor_alleles[marker_b];
+
+	observed_major_af_a = db->major_allele_freqs[marker_a];
+	observed_major_af_b = db->major_allele_freqs[marker_b];
+
+	for (unsigned int i = 0u; i < db->n_haplotypes; i++) {
+		observed_allele_a = observed_haplotype_a[i];
+		observed_allele_b = observed_haplotype_b[i];
+		if (observed_allele_a == observed_ref_allele_a) {
+			if (observed_allele_b == observed_ref_allele_b) {
+				n_observed_haplotype_ref_a_ref_b++;
+			} else if (observed_allele_b == observed_alt_allele_b) {
+				n_observed_haplotype_ref_a_alt_b++;
+			}
+		} else if (observed_allele_a == observed_alt_allele_a) {
+			if (observed_allele_b == observed_ref_allele_b) {
+				n_observed_haplotype_alt_a_ref_b++;
+			} else if (observed_allele_b == observed_alt_allele_b) {
+				n_observed_haplotype_alt_a_alt_b++;
+			}
+		}
+	}
+
+	observed_d = (n_observed_haplotype_ref_a_ref_b / (double)(n_observed_haplotype_ref_a_ref_b + n_observed_haplotype_ref_a_alt_b + n_observed_haplotype_alt_a_ref_b + n_observed_haplotype_alt_a_alt_b)) - (observed_major_af_a * observed_major_af_b);
+
+	return (observed_d * observed_d) / (observed_major_af_a * (1.0 - observed_major_af_a) * observed_major_af_b * (1.0 - observed_major_af_b));
+}
+
 void CI::get_CI(unsigned int marker_a, unsigned int marker_b, double* dprime_lower_ci, double* dprime_upper_ci) {
 
 }

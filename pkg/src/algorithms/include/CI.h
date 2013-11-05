@@ -66,6 +66,7 @@ public:
 	double get_D(unsigned int marker_a, unsigned int marker_b);
 	double get_Dprime(unsigned int marker_a, unsigned int marker_b);
 	double get_r(unsigned int marker_a, unsigned int marker_b);
+	double get_rsq(unsigned int marker_a, unsigned int marker_b);
 
 	virtual void get_CI(unsigned int marker_a, unsigned int marker_b, double* dprime_lower_ci, double* dprime_upper_ci);
 

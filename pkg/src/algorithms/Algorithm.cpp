@@ -33,8 +33,10 @@ Algorithm::Algorithm() throw (Exception) :
 		pos_strong_pair_cl(0.7), neg_strong_pair_cl(-0.7),
 		pos_strong_pair_cu(0.98), neg_strong_pair_cu(-0.98),
 		pos_recomb_pair_cu(0.9), neg_recomb_pair_cu(0.9),
+		strong_pair_rsq(0.8),
 		strong_pairs_fraction(0.95), strong_pair_weight(0.05), recomb_pair_weight(0.95),
-		preliminary_blocks(NULL), n_preliminary_blocks(0u), preliminary_blocks_size(PRELIMINARY_BLOCKS_SIZE_INIT) {
+		preliminary_blocks(NULL), n_preliminary_blocks(0u), preliminary_blocks_size(PRELIMINARY_BLOCKS_SIZE_INIT),
+		rsq_preliminary_blocks(false) {
 
 	preliminary_blocks = (preliminary_block*)malloc(preliminary_blocks_size * sizeof(preliminary_block));
 	if (preliminary_blocks == NULL) {
@@ -76,6 +78,10 @@ void Algorithm::set_recomb_pair_cu(double ci_upper_bound) {
 	neg_recomb_pair_cu = -pos_recomb_pair_cu;
 }
 
+void Algorithm::set_strong_pair_rsq(double rsq_lower_bound) {
+	strong_pair_rsq = rsq_lower_bound;
+}
+
 void Algorithm::set_strong_pairs_fraction(double fraction) {
 	strong_pairs_fraction = fraction;
 	strong_pair_weight = 1.0 - strong_pairs_fraction;
@@ -96,11 +102,13 @@ Partition* Algorithm::get_block_partition() throw (Exception) {
 
 	partition = new Partition(db);
 
+	partition->rsq_blocks = rsq_preliminary_blocks;
 	partition->ci_method = ci_method;
 	partition->likelihood_density = likelihood_density;
 	partition->strong_pair_cl = pos_strong_pair_cl;
 	partition->strong_pair_cu = pos_strong_pair_cu;
 	partition->recomb_pair_cu = pos_recomb_pair_cu;
+	partition->strong_pair_rsq = strong_pair_rsq;
 	partition->strong_pairs_fraction = strong_pairs_fraction;
 
 	used_markers = (bool*)malloc(db->n_markers * sizeof(bool));

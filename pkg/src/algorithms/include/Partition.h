@@ -50,11 +50,13 @@ private:
 			unsigned int* n_haps, unsigned int* n_unique_haps, unsigned int* n_common_haps, double* haps_diversity) throw (Exception);
 
 public:
+	bool rsq_blocks;
 	const char* ci_method;
 	unsigned int likelihood_density;
 	double strong_pair_cl;
 	double strong_pair_cu;
 	double recomb_pair_cu;
+	double strong_pair_rsq;
 	double strong_pairs_fraction;
 	const char* pruning_method;
 	unsigned int window;

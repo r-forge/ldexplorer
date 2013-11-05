@@ -44,6 +44,7 @@ void AlgorithmMIGP::compute_preliminary_blocks() throw (Exception) {
 	preliminary_block* new_strong_pairs = NULL;
 
 	n_preliminary_blocks = 0u;
+	rsq_preliminary_blocks = false;
 
 	ci = CIFactory::create(ci_method, likelihood_density);
 	ci->set_dbview(db);
@@ -95,6 +96,91 @@ void AlgorithmMIGP::compute_preliminary_blocks() throw (Exception) {
 					w_values_sum -= recomb_pair_weight;
 					w_values[j] += w_values_sum;
 				} else {
+					w_values[j] += w_values_sum;
+				}
+			} else {
+				w_values[j] += w_values_sum;
+			}
+
+			w_value_max = w_values[j] + 0.5 * strong_pair_weight * ((db->n_markers - i - 1u) * (db->n_markers + i - j - j));
+			if (auxiliary::fcmp(w_value_max, 0.0, EPSILON) >= 0) {
+				updated_breakpoint = j;
+			}
+		}
+	}
+
+	delete ci;
+	ci = NULL;
+
+	free(w_values);
+	w_values = NULL;
+}
+
+void AlgorithmMIGP::compute_preliminary_blocks_rsq() throw (Exception) {
+	CI* ci = NULL;
+
+	long double* w_values = NULL;
+	long double w_values_sum = 0.0;
+
+	long double w_value_max = 0.0;
+
+	double rsq = 0.0;
+
+	long int breakpoint = 0;
+	long int updated_breakpoint = 0;
+
+	preliminary_block* new_strong_pairs = NULL;
+
+	n_preliminary_blocks = 0u;
+	rsq_preliminary_blocks = true;
+
+	ci = CIFactory::create(CI::NONE, likelihood_density);
+	ci->set_dbview(db);
+
+	w_values = (long double*)malloc(db->n_markers * sizeof(long double));
+	if (w_values == NULL) {
+		throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
+	}
+
+	for (unsigned int i = 0u; i < db->n_markers; ++i) {
+		w_values[i] = 0.0;
+	}
+
+	for (unsigned int i = 1u; i < db->n_markers; ++i) {
+		w_values_sum = 0.0;
+		breakpoint = updated_breakpoint;
+		updated_breakpoint = i;
+		for (long int j = i - 1u; j >= breakpoint; --j) {
+			rsq = ci->get_rsq(i, j);
+			if (!isnan(rsq)) {
+				if (auxiliary::fcmp(rsq, strong_pair_rsq, EPSILON) >= 0) {
+					w_values_sum += strong_pair_weight;
+					w_values[j] += w_values_sum;
+					if (auxiliary::fcmp(w_values[j], 0.0, EPSILON) >= 0) {
+						if (n_preliminary_blocks >= preliminary_blocks_size) {
+							preliminary_blocks_size += PRELIMINARY_BLOCKS_SIZE_INCREMENT;
+							new_strong_pairs = (preliminary_block*)realloc(preliminary_blocks, preliminary_blocks_size * sizeof(preliminary_block));
+							if (new_strong_pairs == NULL) {
+								delete ci;
+								ci = NULL;
+
+								free(w_values);
+								w_values = NULL;
+
+								throw Exception(__FILE__, __LINE__, "Error in memory reallocation.");
+							}
+							preliminary_blocks = new_strong_pairs;
+							new_strong_pairs = NULL;
+						}
+
+						preliminary_blocks[n_preliminary_blocks].start = j;
+						preliminary_blocks[n_preliminary_blocks].end = i;
+						preliminary_blocks[n_preliminary_blocks].length_bp = db->positions[i] - db->positions[j];
+
+						++n_preliminary_blocks;
+					}
+				} else {
+					w_values_sum -= recomb_pair_weight;
 					w_values[j] += w_values_sum;
 				}
 			} else {

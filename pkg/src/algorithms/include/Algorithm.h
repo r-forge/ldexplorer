@@ -55,6 +55,8 @@ protected:
 	double pos_recomb_pair_cu;
 	double neg_recomb_pair_cu;
 
+	double strong_pair_rsq;
+
 	double strong_pairs_fraction;
 
 	double strong_pair_weight;
@@ -63,6 +65,7 @@ protected:
 	preliminary_block* preliminary_blocks;
 	unsigned int n_preliminary_blocks;
 	unsigned int preliminary_blocks_size;
+	bool rsq_preliminary_blocks;
 
 	static int preliminary_blocks_cmp(const void* first, const void* second);
 
@@ -83,9 +86,11 @@ public:
 	void set_strong_pair_cl(double ci_lower_bound);
 	void set_strong_pair_cu(double ci_upper_bound);
 	void set_recomb_pair_cu(double ci_upper_bound);
+	void set_strong_pair_rsq(double rsq_lower_bound);
 	void set_strong_pairs_fraction(double fraction);
 
 	virtual void compute_preliminary_blocks() throw (Exception) = 0;
+	virtual void compute_preliminary_blocks_rsq() throw (Exception) = 0;
 	unsigned int get_n_preliminary_blocks();
 	void sort_preliminary_blocks();
 

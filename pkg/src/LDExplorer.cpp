@@ -970,6 +970,236 @@ extern "C" {
 		return R_NilValue;
 	}
 
+	SEXP mig_rsq(SEXP phase_file, SEXP output_file, SEXP phase_file_format, SEXP map_file,
+			SEXP region, SEXP maf, SEXP ld_rsq, SEXP ld_fraction,
+			SEXP pruning_method, SEXP window) {
+
+		const char* c_phase_file = NULL;
+		const char* c_output_file = NULL;
+		const char* c_phase_file_format = NULL;
+		const char* c_map_file = NULL;
+		long int c_region[2] = {numeric_limits<long int>::min(), numeric_limits<long int>::min()};
+		double c_maf = numeric_limits<double>::quiet_NaN();
+		double c_ld_rsq = numeric_limits<double>::quiet_NaN();
+		double c_ld_fraction = numeric_limits<double>::quiet_NaN();
+		const char* c_pruning_method = NULL;
+		long int c_window = numeric_limits<long int>::min();
+
+//		Validate phase_file argument.
+		if (!isNull(phase_file)) {
+			c_phase_file = validateString(phase_file, "phase_file");
+		} else {
+			error("'%s' argument is NULL.", "phase_file");
+		}
+
+//		Validate output_file argument.
+		if (!isNull(output_file)) {
+			c_output_file = validateString(output_file, "output_file");
+		} else {
+			error("'%s' argument is NULL.", "output_file");
+		}
+
+//		Validate file_format argument.
+		if (!isNull(phase_file_format)) {
+			c_phase_file_format = validateString(phase_file_format, "file_format");
+			if ((auxiliary::strcmp_ignore_case(c_phase_file_format, Db::VCF) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_phase_file_format, Db::HAPMAP2) != 0)) {
+				error("The file format, specified in '%s' argument, must be '%s' or '%s'.", "phase_file_format", Db::VCF, Db::HAPMAP2);
+			}
+		} else {
+			error("'%s' argument is NULL.", "phase_file_format");
+		}
+
+//		Validate legend_file argument.
+		if (auxiliary::strcmp_ignore_case(c_phase_file_format, Db::HAPMAP2) == 0) {
+			if (!isNull(map_file)) {
+				c_map_file = validateString(map_file, "map_file");
+			} else {
+				error("'%s' argument is NULL.", "map_file");
+			}
+		}
+
+//		Validate region argument.
+		if (!isNull(region)) {
+			validateIntegers(region, "region", c_region, 2u);
+			if (c_region[0] < 0) {
+				error("The region start position, specified in '%s' argument, must be positive.", "region");
+			}
+			if (c_region[1] < 0) {
+				error("The region end position, specified in '%s' argument, must be positive.", "region");
+			}
+			if (c_region[0] >= c_region[1]) {
+				error("The region end position, specified in '%s' argument, must be strictly greater than the region start position.", "region");
+			}
+		}
+
+//		Validate maf argument.
+		if (!isNull(maf)) {
+			c_maf = validateDouble(maf, "maf");
+			if ((c_maf < 0.0) || (c_maf > 0.5)) {
+				error("The minor allele frequency, specified in '%s' argument, must be in [0, 0.5] interval.", "maf");
+			}
+		} else {
+			error("'%s' argument is NULL.", "maf");
+		}
+
+//		Validate ld_rsq argument.
+		if (!isNull(ld_rsq)) {
+			c_ld_rsq = validateDouble(ld_rsq, "ld_rsq");
+			if ((c_ld_rsq <= 0.0) || (c_ld_rsq > 1.0)) {
+				error("The lower bound of the r^2, specified in '%s' argument, must be in (0, 1] interval.", "ld_rsq");
+			}
+		} else {
+			error("'%s' argument is NULL.", "ld_rsq");
+		}
+
+//		Validate ld_fraction argument.
+		if (!isNull(ld_fraction)) {
+			c_ld_fraction = validateDouble(ld_fraction, "ld_fraction");
+			if ((c_ld_fraction <= 0.0) || (c_ld_fraction > 1.0)) {
+				error("The fraction of strong LD SNP pairs within a haplotype block, specified in '%s' argument, must be in (0.0, 1.0] interval.", "ld_fraction");
+			}
+		} else {
+			error("'%s' argument is NULL.", "ld_fraction");
+		}
+
+//		Validate pruning_method argument.
+		if (!isNull(pruning_method)) {
+			c_pruning_method = validateString(pruning_method, "pruning_method");
+			if ((auxiliary::strcmp_ignore_case(c_pruning_method, Algorithm::ALGORITHM_MIG) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_pruning_method, Algorithm::ALGORITHM_MIGP) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_pruning_method, Algorithm::ALGORITHM_MIGPP) != 0)) {
+				error("The search space pruning method, specified in '%s' argument, must be '%s', '%s' or '%s'.",
+						"file_format", Algorithm::ALGORITHM_MIG, Algorithm::ALGORITHM_MIGP, Algorithm::ALGORITHM_MIGPP);
+			}
+		} else {
+			error("'%s' argument is NULL.", "pruning_method");
+		}
+
+//		Validate window argument if MIG++ search space pruning method was specified.
+		if (auxiliary::strcmp_ignore_case(c_pruning_method, Algorithm::ALGORITHM_MIGPP) == 0) {
+			if (!isNull(window)) {
+				c_window = validateInteger(window, "window");
+				if (c_window <= 0) {
+					error("The window size, specified in '%s' argument, must be strictly greater than 0.", "window");
+				}
+			}
+		}
+
+		Algorithm* algorithm = NULL;
+		Partition* partition = NULL;
+
+		try {
+			clock_t start_time = 0;
+			double execution_time = 0.0;
+
+			Db db;
+			const DbView* dbview = NULL;
+
+			Rprintf("Loading data...\n");
+
+			start_time = clock();
+			db.set_hap_file(c_phase_file);
+			db.set_map_file(c_map_file);
+			db.load(c_region[0] == numeric_limits<long int>::min() ? 0u : (unsigned long int)c_region[0], c_region[1] == numeric_limits<long int>::min() ? numeric_limits<unsigned long int>::max() : (unsigned long int)c_region[1], c_phase_file_format);
+			dbview = db.create_view(c_maf, c_region[0] == numeric_limits<long int>::min() ? 0u : (unsigned long int)c_region[0], c_region[1] == numeric_limits<long int>::min() ? numeric_limits<unsigned long int>::max() : (unsigned long int)c_region[1]);
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+
+			if (dbview == NULL) {
+				Rprintf("\tNot enough SNPs (<= 1) in the specified region.\n");
+				Rprintf("Done (%.3f sec)\n", execution_time);
+				return R_NilValue;
+			}
+
+			Rprintf("\tPhase file: %s\n", c_phase_file);
+			Rprintf("\tMap file: %s\n", c_map_file == NULL ? "NA" : c_map_file);
+			if ((c_region[0] != numeric_limits<long int>::min()) && (c_region[1] != numeric_limits<long int>::min())) {
+				Rprintf("\tRegion: [%u, %u]\n", c_region[0], c_region[1]);
+			} else {
+				Rprintf("\tRegion: NA\n");
+			}
+			Rprintf("\tMAF filter: > %g\n", dbview->maf_threshold);
+			Rprintf("\tAll SNPs: %u\n", dbview->n_unfiltered_markers);
+			Rprintf("\tFiltered SNPs: %u\n", dbview->n_markers);
+			Rprintf("\tHaplotypes: %u\n", dbview->n_haplotypes);
+			Rprintf("\tUsed memory (Mb): %.3f\n", db.get_memory_usage());
+			Rprintf("Done (%.3f sec)\n", execution_time);
+
+			Rprintf("Initializing algorithm...\n");
+			start_time = clock();
+
+			Rprintf("\tr^2 lower bound for strong LD SNP pairs: >= %g\n", c_ld_rsq);
+			Rprintf("\tFraction of strong LD SNP pairs: >= %g\n", c_ld_fraction);
+			Rprintf("\tPruning method: %s\n", c_pruning_method);
+			Rprintf("\tWindow: ");
+			if (auxiliary::strcmp_ignore_case(c_pruning_method, Algorithm::ALGORITHM_MIGPP) == 0) {
+				if (c_window == numeric_limits<long int>::min()) {
+					c_window = (long int)(((double)dbview->n_markers * (1.0 - c_ld_fraction)) / 2.0);
+					if (c_window <= 0) {
+						c_window = 1;
+					}
+				}
+				Rprintf("%ld\n", c_window);
+			} else {
+				Rprintf("NA\n", c_window);
+			}
+
+			algorithm = AlgorithmFactory::create(c_pruning_method, c_window);
+
+			algorithm->set_dbview(dbview);
+			algorithm->set_strong_pair_rsq(c_ld_rsq);
+			algorithm->set_strong_pairs_fraction(c_ld_fraction);
+
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+			Rprintf("Done (%.3f sec)\n", execution_time);
+
+			Rprintf("Processing data...\n");
+			start_time = clock();
+
+			algorithm->compute_preliminary_blocks_rsq();
+			Rprintf("\tPreliminary haplotype blocks: %u\n", algorithm->get_n_preliminary_blocks());
+
+			algorithm->sort_preliminary_blocks();
+			partition = algorithm->get_block_partition();
+
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+
+			Rprintf("\tFinal haplotype blocks: %u\n", partition->get_n_blocks());
+
+			Rprintf("\tMemory used for preliminary haplotype blocks (Mb): %.3g\n", algorithm->get_memory_usage_preliminary_blocks());
+			Rprintf("\tMemory used for final haplotype blocks (Mb): %.3g\n", partition->get_memory_usage());
+			Rprintf("\tMemory used by algorithm (Mb): %.3g\n", algorithm->get_memory_usage());
+			Rprintf("\tTotal used memory (Mb): %.3g\n", algorithm->get_memory_usage_preliminary_blocks() + partition->get_memory_usage() + algorithm->get_memory_usage());
+			Rprintf("Done (%.3f sec)\n", execution_time);
+
+			Rprintf("Writing results...\n");
+			Rprintf("\tOutput file: %s\n", c_output_file);
+
+			start_time = clock();
+			partition->write(c_output_file);
+			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
+
+			Rprintf("Done (%.3f sec)\n", execution_time);
+
+			delete partition;
+			partition = NULL;
+
+			delete algorithm;
+			algorithm = NULL;
+
+		} catch (Exception &e) {
+			delete partition;
+			partition = NULL;
+
+			delete algorithm;
+			algorithm = NULL;
+
+			error("%s", e.what());
+		}
+
+		return R_NilValue;
+	}
+
 	SEXP ld(SEXP phase_file, SEXP snps_file, SEXP output_file, SEXP window, SEXP coefficient, SEXP maf, SEXP gzip) {
 		const char* c_phase_file = NULL;
 		const char* c_snps_file = NULL;

@@ -33,6 +33,7 @@ public:
 	virtual ~AlgorithmMIGPP();
 
 	void compute_preliminary_blocks() throw (Exception);
+	void compute_preliminary_blocks_rsq() throw (Exception);
 
 	Partition* get_block_partition() throw (Exception);
 
