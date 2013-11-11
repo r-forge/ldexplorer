@@ -971,7 +971,7 @@ extern "C" {
 	}
 
 	SEXP mig_rsq(SEXP phase_file, SEXP output_file, SEXP phase_file_format, SEXP map_file,
-			SEXP region, SEXP maf, SEXP ld_rsq, SEXP ld_fraction,
+			SEXP region, SEXP maf, SEXP weak_rsq, SEXP strong_rsq, SEXP fraction,
 			SEXP pruning_method, SEXP window) {
 
 		const char* c_phase_file = NULL;
@@ -980,8 +980,9 @@ extern "C" {
 		const char* c_map_file = NULL;
 		long int c_region[2] = {numeric_limits<long int>::min(), numeric_limits<long int>::min()};
 		double c_maf = numeric_limits<double>::quiet_NaN();
-		double c_ld_rsq = numeric_limits<double>::quiet_NaN();
-		double c_ld_fraction = numeric_limits<double>::quiet_NaN();
+		double c_weak_rsq = numeric_limits<double>::quiet_NaN();
+		double c_strong_rsq = numeric_limits<double>::quiet_NaN();
+		double c_fraction = numeric_limits<double>::quiet_NaN();
 		const char* c_pruning_method = NULL;
 		long int c_window = numeric_limits<long int>::min();
 
@@ -1043,24 +1044,34 @@ extern "C" {
 			error("'%s' argument is NULL.", "maf");
 		}
 
-//		Validate ld_rsq argument.
-		if (!isNull(ld_rsq)) {
-			c_ld_rsq = validateDouble(ld_rsq, "ld_rsq");
-			if ((c_ld_rsq <= 0.0) || (c_ld_rsq > 1.0)) {
-				error("The lower bound of the r^2, specified in '%s' argument, must be in (0, 1] interval.", "ld_rsq");
+//		Validate weak_rsq argument.
+		if (!isNull(weak_rsq)) {
+			c_weak_rsq = validateDouble(weak_rsq, "weak_rsq");
+			if ((c_weak_rsq <= 0.0) || (c_weak_rsq > 1.0)) {
+				error("The upper bound of the r^2 for the weak LD SNP pairs, specified in '%s' argument, must be in (0, 1] interval.", "weak_rsq");
 			}
 		} else {
-			error("'%s' argument is NULL.", "ld_rsq");
+			error("'%s' argument is NULL.", "weak_rsq");
+		}
+
+//		Validate strong_rsq argument.
+		if (!isNull(strong_rsq)) {
+			c_strong_rsq = validateDouble(strong_rsq, "strong_rsq");
+			if ((c_strong_rsq <= 0.0) || (c_strong_rsq > 1.0)) {
+				error("The lower bound of the r^2 for the strong LD SNP pairs, specified in '%s' argument, must be in (0, 1] interval.", "strong_rsq");
+			}
+		} else {
+			error("'%s' argument is NULL.", "strong_rsq");
 		}
 
 //		Validate ld_fraction argument.
-		if (!isNull(ld_fraction)) {
-			c_ld_fraction = validateDouble(ld_fraction, "ld_fraction");
-			if ((c_ld_fraction <= 0.0) || (c_ld_fraction > 1.0)) {
-				error("The fraction of strong LD SNP pairs within a haplotype block, specified in '%s' argument, must be in (0.0, 1.0] interval.", "ld_fraction");
+		if (!isNull(fraction)) {
+			c_fraction = validateDouble(fraction, "fraction");
+			if ((c_fraction <= 0.0) || (c_fraction > 1.0)) {
+				error("The fraction of the strong LD SNP pairs within a haplotype block, specified in '%s' argument, must be in (0.0, 1.0] interval.", "fraction");
 			}
 		} else {
-			error("'%s' argument is NULL.", "ld_fraction");
+			error("'%s' argument is NULL.", "fraction");
 		}
 
 //		Validate pruning_method argument.
@@ -1128,13 +1139,14 @@ extern "C" {
 			Rprintf("Initializing algorithm...\n");
 			start_time = clock();
 
-			Rprintf("\tr^2 lower bound for strong LD SNP pairs: >= %g\n", c_ld_rsq);
-			Rprintf("\tFraction of strong LD SNP pairs: >= %g\n", c_ld_fraction);
+			Rprintf("\tWeak LD SNP pairs r^2: < %g\n", c_weak_rsq);
+			Rprintf("\tStrong LD SNP pairs r^2: >= %g\n", c_strong_rsq);
+			Rprintf("\tFraction of strong LD SNP pairs: >= %g\n", c_fraction);
 			Rprintf("\tPruning method: %s\n", c_pruning_method);
 			Rprintf("\tWindow: ");
 			if (auxiliary::strcmp_ignore_case(c_pruning_method, Algorithm::ALGORITHM_MIGPP) == 0) {
 				if (c_window == numeric_limits<long int>::min()) {
-					c_window = (long int)(((double)dbview->n_markers * (1.0 - c_ld_fraction)) / 2.0);
+					c_window = (long int)(((double)dbview->n_markers * (1.0 - c_fraction)) / 2.0);
 					if (c_window <= 0) {
 						c_window = 1;
 					}
@@ -1147,8 +1159,9 @@ extern "C" {
 			algorithm = AlgorithmFactory::create(c_pruning_method, c_window);
 
 			algorithm->set_dbview(dbview);
-			algorithm->set_strong_pair_rsq(c_ld_rsq);
-			algorithm->set_strong_pairs_fraction(c_ld_fraction);
+			algorithm->set_weak_pair_rsq(c_weak_rsq);
+			algorithm->set_strong_pair_rsq(c_strong_rsq);
+			algorithm->set_strong_pairs_fraction(c_fraction);
 
 			execution_time = (clock() - start_time)/(double)CLOCKS_PER_SEC;
 			Rprintf("Done (%.3f sec)\n", execution_time);

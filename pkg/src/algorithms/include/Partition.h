@@ -56,6 +56,7 @@ public:
 	double strong_pair_cl;
 	double strong_pair_cu;
 	double recomb_pair_cu;
+	double weak_pair_rsq;
 	double strong_pair_rsq;
 	double strong_pairs_fraction;
 	const char* pruning_method;

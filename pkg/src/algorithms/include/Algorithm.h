@@ -55,6 +55,7 @@ protected:
 	double pos_recomb_pair_cu;
 	double neg_recomb_pair_cu;
 
+	double weak_pair_rsq;
 	double strong_pair_rsq;
 
 	double strong_pairs_fraction;
@@ -86,7 +87,8 @@ public:
 	void set_strong_pair_cl(double ci_lower_bound);
 	void set_strong_pair_cu(double ci_upper_bound);
 	void set_recomb_pair_cu(double ci_upper_bound);
-	void set_strong_pair_rsq(double rsq_lower_bound);
+	void set_weak_pair_rsq(double weak_rsq);
+	void set_strong_pair_rsq(double strong_rsq);
 	void set_strong_pairs_fraction(double fraction);
 
 	virtual void compute_preliminary_blocks() throw (Exception) = 0;

@@ -110,7 +110,8 @@ void Partition::write(const char* output_file_name) throw (Exception) {
 			writer->write("# D' CI UPPER BOUND FOR STRONG LD: >= %g\n", strong_pair_cu);
 			writer->write("# D' CI UPPER BOUND FOR RECOMBINATION: <= %g\n", recomb_pair_cu);
 		} else {
-			writer->write("# r^2 LOWER BOUND FOR STRONG LD: >= %g\n", strong_pair_rsq);
+			writer->write("# WEAK LD r^2: < %g\n", weak_pair_rsq);
+			writer->write("# STRONG LD r^2: >= %g\n", strong_pair_rsq);
 		}
 		writer->write("# FRACTION OF STRONG LD SNP PAIRS: >= %g\n", strong_pairs_fraction);
 		writer->write("# PRUNING METHOD: %s\n", pruning_method);

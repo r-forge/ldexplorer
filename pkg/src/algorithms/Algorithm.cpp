@@ -78,8 +78,12 @@ void Algorithm::set_recomb_pair_cu(double ci_upper_bound) {
 	neg_recomb_pair_cu = -pos_recomb_pair_cu;
 }
 
-void Algorithm::set_strong_pair_rsq(double rsq_lower_bound) {
-	strong_pair_rsq = rsq_lower_bound;
+void Algorithm::set_weak_pair_rsq(double weak_rsq) {
+	weak_pair_rsq = weak_rsq;
+}
+
+void Algorithm::set_strong_pair_rsq(double strong_rsq) {
+	strong_pair_rsq = strong_rsq;
 }
 
 void Algorithm::set_strong_pairs_fraction(double fraction) {
@@ -108,6 +112,7 @@ Partition* Algorithm::get_block_partition() throw (Exception) {
 	partition->strong_pair_cl = pos_strong_pair_cl;
 	partition->strong_pair_cu = pos_strong_pair_cu;
 	partition->recomb_pair_cu = pos_recomb_pair_cu;
+	partition->weak_pair_rsq = weak_pair_rsq;
 	partition->strong_pair_rsq = strong_pair_rsq;
 	partition->strong_pairs_fraction = strong_pairs_fraction;
 

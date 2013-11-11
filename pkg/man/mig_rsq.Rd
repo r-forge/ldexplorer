@@ -1,6 +1,6 @@
 \name{mig_rsq}
 \alias{mig_rsq}
-\title{Memory-efficient Implementation of Gabriel et al. 2002 haplotype block definition based on r^2 coefficient}
+\title{Memory-efficient Implementation of Gabriel et al. 2002 haplotype block definition using the r^2 coefficient}
 \description{
 	Function for the efficient whole-genome haplotype block partitioning.
 	Haplotype blocks are defined based on r^2 coefficient of linkage disequilibrium.
@@ -8,7 +8,7 @@
 \usage{
 	mig_rsq(phase_file, output_file, phase_file_format = "VCF", 
 	map_file = NULL, region = NULL, maf = 0.0, 
-	ld_rsq = 0.8, ld_fraction = 0.95, pruning_method = "MIG++", window = NULL)
+	weak_rsq = 0.5, strong_rsq = 0.8, fraction = 0.95, pruning_method = "MIG++", window = NULL)
 }
 \arguments{
 	\item{phase_file}{
@@ -33,12 +33,19 @@
 		Minor Allele Frequency (MAF) threshold: SNPs with MAF <= maf will not be considered.
 		The threshold may vary from 0 (default) to 0.5.
 	}
-	\item{ld_rsq}{
-		r^2 threshold value for the SNP pairs in strong LD.
-		Default is 0.8. 
+	\item{weak_rsq}{
+		r^2 threshold value for the SNP pairs in weak LD.
+		A SNP pair is in weak LD if r^2 < weak_rsq.
+		By default, weak_rsq = 0.5.
 	}
-	\item{ld_fraction}{
-		Fraction of strong LD SNP pairs over all SNP pairs that is needed to classify a sequence of SNP as a haplotype block.
+	\item{strong_rsq}{
+		r^2 threshold value for the SNP pairs in strong LD.
+		A SNP pair is in strong LD if r^2 >= strong_rsq.
+		By default, strong_rsq = 0.8.
+	}
+	\item{fraction}{
+		Fraction of strong LD SNP pairs over all informative SNP pairs that is needed to classify a sequence of SNP as a haplotype block.
+		Informative SNP pairs are those that are in strong LD or in weak LD.
 		Default is 0.95.
 	}
 	\item{pruning_method}{
@@ -51,47 +58,46 @@
 	}
 }
 \section{Haplotype Blocks}{
-%	The haplotype blocks are defined based on D' coefficient of linkage disequilibrium (LD) between a pair of SNPs (Gabriel et al., 2002).
-%	 
-%	\subsection{SNP Pairs Classification}{
-%		According to the lower (CL) and upper (CU) bounds of the 90\% confidence interval (CI) of the |D'| statistic, LD between any SNP pair is classified as follows:  \cr 
-%		(1) strong LD if CL >= 0.7 and CU >= 0.98;  \cr
-%		(2) strong evidence of historical recombination (strong EHR) if CU < 0.9.
-%		
-%		All SNP pairs satisfying conditions (1) and (2) are called informative.  
-%	}
-%	
-%	\subsection{Haplotype Block Definition}{
-%		A chromosomal region is a haplotype block if:  \cr
-%		(a) the two outer-most SNPs are in strong LD;  \cr
-%		(b) at least 95\% of informative SNP pairs are in strong LD.  
-%	}
+	The haplotype blocks are defined based on r^2 coefficient of linkage disequilibrium (LD) between a pair of SNPs following the logic suggested by Gabriel et al., 2002.
+	
+	\subsection{SNP Pairs Classification}{
+		According to  the r^2 statistic, LD between any SNP pair is classified as follows:  \cr 
+		(1) strong LD if r^2 >= 0.8;  \cr
+		(2) weak LD if r^2 < 0.5;
+		
+		All SNP pairs satisfying conditions (1) and (2) are called informative.
+	}
+
+	\subsection{Haplotype Block Definition}{
+		A chromosomal region is a haplotype block if:  \cr
+		(a) the two outer-most SNPs are in strong LD;  \cr
+		(b) at least 95\% of informative SNP pairs within the region are in strong LD.  
+	}
 }
 \section{Search Space Pruning}{
-%	\subsection{MIG}{
-%		The MIG is a memory efficient implementation of Gabriel et al. 2002 haplotype block definition.  
-%		It has extremely low memory requirements (linear memory complexity) and is able to represent LD structure of the entire chromosome (millions of SNPs) in the main memory.  
-%		The MIG doesn't prune the search space i.e. it computes LD for all possible SNP pairs.  
-%		Therefore, its runtime is equivalent to the runtime of Haploview (Barrett et al., 2005) algorithm.    
-%	}
-%	
-%	\subsection{MIG+}{
-%		The MIG+ identifies and omits computations in regions that can never become haplotype blocks.  
-%		The chromosome is processed from left to right.  
-%		Assuming all unprocessed SNP pairs to the right being in strong LD, an early termination point is determined using already known LD structure to the left.  
-%		It is theoretically guaranteed, that haplotype blocks produced by MIG and MIG+ are identical.  
-%		The MIG+ has low memory requirements and improved runtime compared to MIG.  
-%	}
-%	
-%	\subsection{MIG++}{
-%		The MIG++ is the improved version of MIG+ search space pruning method.  
-%		The chromosome is processed in several iterations.  
-%		At every iteration it is scanned from the very start to the very end and the computations are restricted by a user-defined window.  
-%		The window is expressed as a maximal number of SNPs that will be considered when computing LD with the currently considered SNP.  
-%		In every new iteration, the partially calculated LD structure across the whole chromosome allows to predict termination points better.  
-%		It is theoretically guaranteed, that haplotype blocks produced by MIG, MIG+ and MIG++ are identical.  
-%		The MIG++ has low memory requirements and significantly better runtime compared to MIG and MIG+.  
-%	}
+	\subsection{MIG}{
+		The MIG is a memory efficient implementation of Gabriel et al. 2002 haplotype block definition using the r^2 coefficient.  
+		It has extremely low memory requirements (linear memory complexity) and is able to represent LD structure of the entire chromosome (millions of SNPs) in the main memory.  
+		The MIG doesn't prune the search space i.e. it computes LD for all possible SNP pairs.     
+	}
+	
+	\subsection{MIG+}{
+		The MIG+ identifies and omits computations in regions that can never become haplotype blocks.  
+		The chromosome is processed from left to right.  
+		Assuming all unprocessed SNP pairs to the right being in strong LD, an early termination point is determined using already known LD structure to the left.  
+		It is theoretically guaranteed, that haplotype blocks produced by MIG and MIG+ are identical.  
+		The MIG+ has low memory requirements and improved runtime compared to MIG.  
+	}
+	
+	\subsection{MIG++}{
+		The MIG++ is the improved version of MIG+ search space pruning method.  
+		The chromosome is processed in several iterations.  
+		At every iteration it is scanned from the very start to the very end and the computations are restricted by a user-defined window.  
+		The window is expressed as a maximal number of SNPs that will be considered when computing LD with the currently considered SNP.  
+		In every new iteration, the partially calculated LD structure across the whole chromosome allows to predict termination points better.  
+		It is theoretically guaranteed, that haplotype blocks produced by MIG, MIG+ and MIG++ are identical.  
+		The MIG++ has low memory requirements and significantly better runtime compared to MIG and MIG+.  
+	}
 }
 \section{Output File}{
 	The output file consists of the following columns:
@@ -111,15 +117,9 @@
 	}
 }
 \references{
-%	Zapata, C., Alvarez, G., Carollo, C. (1997) Approximate variance of the standardized measure of gametic disequilibrium D'. \emph{American Journal of Human Genetics}, \bold{61}(3), 771--774.
-
 	Patil, N. et al. (2001) Blocks of Limited Haplotype Diversity Revealed by High-Resolution Scanning of Human Chromosome 21. \emph{Science}, \bold{294}(5547), 1719--1723.
 	
 	Gabriel, S. B. et al. (2002) The Structure of Haplotype Blocks in the Human Genome. \emph{Science}, \bold{296}(5576), 2225--2229.
-	
-%	Wall, J. D. and Pritchard, J. K. (2003) Assessing the performance of the haplotype block model of linkage disequilibrium. \emph{American Journal of Human Genetics}, \bold{73}(3), 502--515.
-	
-	Barrett, J. C. et al. (2005) Haploview: analysis and visualization of LD and haplotype maps. \emph{Bioinformatics}, \bold{21}(2), 263--265.
 }
 \author{Daniel Taliun, Johann Gamper, Cristian Pattaro}
 \keyword{misc}

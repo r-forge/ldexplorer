@@ -390,8 +390,10 @@ void AlgorithmMIGPP::compute_preliminary_blocks_rsq() throw (Exception) {
 
 							++n_preliminary_blocks;
 						}
-					} else {
+					} else if (auxiliary::fcmp(rsq, weak_pair_rsq, EPSILON) < 0) {
 						w_values_sums[i] -= recomb_pair_weight;
+						w_values[j] += w_values_sums[i];
+					} else {
 						w_values[j] += w_values_sums[i];
 					}
 				} else {

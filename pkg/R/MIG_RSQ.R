@@ -17,7 +17,7 @@
 # along with LDExplorer.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-mig_rsq <- function(phase_file, output_file, phase_file_format = "VCF", map_file = NULL, region = NULL, maf = 0.0, ld_rsq = 0.3, ld_fraction = 0.95, pruning_method = "MIG++", window = NULL) {
+mig_rsq <- function(phase_file, output_file, phase_file_format = "VCF", map_file = NULL, region = NULL, maf = 0.0, weak_rsq = 0.5, strong_rsq = 0.8, fraction = 0.95, pruning_method = "MIG++", window = NULL) {
 	if (missing(phase_file)) {
 		stop("The 'phase_file' argument is missing.");
 	}
@@ -26,5 +26,5 @@ mig_rsq <- function(phase_file, output_file, phase_file_format = "VCF", map_file
 		stop("The 'output_file' argument is missing.");
 	}
 	
-	result <- .Call("mig_rsq", phase_file, output_file, phase_file_format, map_file, region, maf, ld_rsq, ld_fraction, pruning_method, window)
+	result <- .Call("mig_rsq", phase_file, output_file, phase_file_format, map_file, region, maf, weak_rsq, strong_rsq, fraction, pruning_method, window)
 }
