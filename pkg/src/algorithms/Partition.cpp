@@ -135,7 +135,7 @@ void Partition::write(const char* output_file_name) throw (Exception) {
 
 			get_block_diversity(b, &n_haps, &n_unique_haps, &n_common_haps, &haps_diversity);
 
-			writer->write("BLOCK_%07u\t%s\t%s\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%g\n",
+			writer->write("BLOCK%07u\t%s\t%s\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%g\n",
 					b + 1u, first_marker, last_marker, block.start, block.end, start_bp, end_bp, n_markers, n_haps, n_unique_haps, n_common_haps, haps_diversity);
 		}
 

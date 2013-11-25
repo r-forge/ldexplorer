@@ -15,7 +15,7 @@
 \arguments{
 	\item{phase_files}{
 		The list of names of the input files with phased genotypes.
-		All input files must be in the same format: VCF or HAPMAP2.
+		All input files must be in the same format: VCF, HAPMAP2 or IMPUTE2.
 	}
 	\item{output_files}{
 		The list of names of the output files where to store the haplotype blocks.
@@ -26,7 +26,7 @@
 		All processes are created on the \emph{localhost} and communicate through sockets.
 	}
 	\item{phase_file_format}{
-		Format of the phase_files: VCF (default) or HAPMAP2.
+		Format of the phase_files: VCF (default), HAPMAP2 or IMPUTE2.
 		If VCF, then only SNPs with "PASS" or "." in the FILTER field are considered.
 	}
 	\item{map_files}{

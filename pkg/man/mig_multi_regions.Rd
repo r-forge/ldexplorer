@@ -14,7 +14,7 @@
 }
 \arguments{
 	\item{phase_file}{
-		Name of the input file with phased genotypes in VCF or HAPMAP2 format.
+		Name of the input file with phased genotypes in VCF, HAPMAP2 or IMPUTE2 format.
 	}
 	\item{output_files}{
 		The list of names of the output files where to store the haplotype blocks.
@@ -31,7 +31,7 @@
 		All parallel processes are created on the same machine and shares the main memory.
 	}
 	\item{phase_file_format}{
-		Format of the phase_file: VCF (default) or HAPMAP2.
+		Format of the phase_file: VCF (default), HAPMAP2 or IMPUTE2.
 		If VCF, then only SNPs with "PASS" or "." in the FILTER field are considered.
 	}
 	\item{map_file}{

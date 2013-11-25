@@ -294,8 +294,9 @@ extern "C" {
 		if (!isNull(phase_file_format)) {
 			c_phase_file_format = validateString(phase_file_format, "file_format");
 			if ((auxiliary::strcmp_ignore_case(c_phase_file_format, Db::VCF) != 0) &&
-					(auxiliary::strcmp_ignore_case(c_phase_file_format, Db::HAPMAP2) != 0)) {
-				error("The file format, specified in '%s' argument, must be '%s' or '%s'.", "phase_file_format", Db::VCF, Db::HAPMAP2);
+					(auxiliary::strcmp_ignore_case(c_phase_file_format, Db::HAPMAP2) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_phase_file_format, Db::IMPUTE2) != 0)) {
+				error("The file format, specified in '%s' argument, must be '%s', '%s' or '%s'.", "phase_file_format", Db::VCF, Db::HAPMAP2, Db::IMPUTE2);
 			}
 		} else {
 			error("'%s' argument is NULL.", "phase_file_format");
@@ -583,8 +584,9 @@ extern "C" {
 		if (!isNull(phase_file_format)) {
 			c_phase_file_format = validateString(phase_file_format, "file_format");
 			if ((auxiliary::strcmp_ignore_case(c_phase_file_format, Db::VCF) != 0) &&
-					(auxiliary::strcmp_ignore_case(c_phase_file_format, Db::HAPMAP2) != 0)) {
-				error("The file format, specified in '%s' argument, must be '%s' or '%s'.", "phase_file_format", Db::VCF, Db::HAPMAP2);
+					(auxiliary::strcmp_ignore_case(c_phase_file_format, Db::HAPMAP2) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_phase_file_format, Db::IMPUTE2) != 0)) {
+				error("The file format, specified in '%s' argument, must be '%s', '%s' or '%s'.", "phase_file_format", Db::VCF, Db::HAPMAP2, Db::IMPUTE2);
 			}
 		} else {
 			error("'%s' argument is NULL.", "phase_file_format");
@@ -1004,8 +1006,9 @@ extern "C" {
 		if (!isNull(phase_file_format)) {
 			c_phase_file_format = validateString(phase_file_format, "file_format");
 			if ((auxiliary::strcmp_ignore_case(c_phase_file_format, Db::VCF) != 0) &&
-					(auxiliary::strcmp_ignore_case(c_phase_file_format, Db::HAPMAP2) != 0)) {
-				error("The file format, specified in '%s' argument, must be '%s' or '%s'.", "phase_file_format", Db::VCF, Db::HAPMAP2);
+					(auxiliary::strcmp_ignore_case(c_phase_file_format, Db::HAPMAP2) != 0) &&
+					(auxiliary::strcmp_ignore_case(c_phase_file_format, Db::IMPUTE2) != 0)) {
+				error("The file format, specified in '%s' argument, must be '%s' or '%s'.", "phase_file_format", Db::VCF, Db::HAPMAP2, Db::IMPUTE2);
 			}
 		} else {
 			error("'%s' argument is NULL.", "phase_file_format");

@@ -21,6 +21,7 @@
 
 const char* Db::VCF = "VCF";
 const char* Db::HAPMAP2 = "HAPMAP2";
+const char* Db::IMPUTE2 = "IMPUTE2";
 
 const char Db::VCF_FIELD_SEPARATOR = '\t';
 const char* Db::VCF_FILE_FORMAT = "##fileformat";
@@ -53,6 +54,9 @@ const unsigned int Db::HAPMAP2_MAP_MANDATORY_COLUMNS_SIZE = 4u;
 const char* Db::hapmap2_map_mandatory_columns[HAPMAP2_MAP_MANDATORY_COLUMNS_SIZE] = {
 		HAPMAP2_MAP_RS, HAPMAP2_MAP_POSITION, HAPMAP2_MAP_0, HAPMAP2_MAP_1
 };
+
+const char Db::IMPUTE2_HAP_FIELD_SEPARATOR = ' ';
+const unsigned int Db::IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE = 5u;
 
 const unsigned int Db::HEAP_SIZE = 2000000;
 const unsigned int Db::HEAP_INCREMENT = 100000;
@@ -264,6 +268,12 @@ void Db::load(unsigned long int start_position, unsigned long int end_position, 
 			load_hapmap2(start_position, end_position);
 		} else {
 			load_hapmap2();
+		}
+	} else if (auxiliary::strcmp_ignore_case(type, IMPUTE2) == 0) {
+		if ((start_position != 0u) || (end_position != numeric_limits<unsigned long int>::max())) {
+			load_impute2(start_position, end_position);
+		} else {
+			load_impute2();
 		}
 	} else {
 		throw Exception(__FILE__, __LINE__, "Unknown file type '%s' was specified.", type);
@@ -1299,6 +1309,356 @@ void Db::load_hapmap2() throw (Exception) {
 
 		free(n_second_alleles);
 		n_second_alleles = NULL;
+	} catch (Exception &e) {
+		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", hap_file_name);
+		throw;
+	}
+}
+
+void Db::load_impute2(unsigned long int start_position, unsigned long int end_position) throw (Exception) {
+	Reader* reader = NULL;
+
+	char* line = NULL;
+	int line_length = 0;
+	unsigned int line_number = 0u;
+
+	char* token = NULL;
+	char** tokens = NULL;
+
+	unsigned int total_column_number = 0u;
+	unsigned int column_number = 0u;
+
+	Unique chromosome;
+	unsigned int length = 0u;
+
+	unsigned int n_first_allele = 0u;
+	unsigned int n_second_allele = 0u;
+	char swap_allele = '\0';
+
+	try {
+		reader = ReaderFactory::create(hap_file_name);
+		reader->open();
+
+		/* Read the first line to determine number of individuals. */
+		if ((line_length = reader->read_line()) > 0) {
+			++line_number;
+			line = *(reader->line);
+			total_column_number = 0u;
+			while ((token = auxiliary::strtok(&line, IMPUTE2_HAP_FIELD_SEPARATOR)) != NULL) {
+				++total_column_number;
+			}
+		}
+
+		if (line_length == 0) {
+			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, hap_file_name);
+		}
+
+		if (total_column_number <= IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE) {
+			throw Exception(__FILE__, __LINE__, "The number of columns (%d) on line %d in '%s' file is not equal to the expected (%d).", total_column_number, line_number, hap_file_name, IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE);
+		}
+
+		n_haplotypes = total_column_number - IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE;
+
+		/* Load data. */
+		reader->reset();
+
+		tokens = (char**)malloc(total_column_number * sizeof(char*));
+		if (tokens == NULL) {
+			throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
+		}
+
+		while ((line_length = reader->read_line()) > 0) {
+			++line_number;
+			line = *(reader->line);
+			column_number = 0u;
+
+			while ((token = auxiliary::strtok(&line, IMPUTE2_HAP_FIELD_SEPARATOR)) != NULL) {
+				if (column_number < total_column_number) {
+					tokens[column_number] = token;
+				}
+				++column_number;
+			}
+
+			if (column_number != total_column_number) {
+				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on line %d in '%s' file is not equal to the expected (%d).", column_number, line_number, hap_file_name, total_column_number);
+			}
+
+			/* tokens[0] -- chromosome. check if unique across all IMPUTE2 file. must be one file per chromosome. */
+			if (!(chromosome.*chromosome.check)(tokens[0u])) {
+				throw Exception(__FILE__, __LINE__, "Unexpected chromosome '%s' (expected chromosome is '%s') was found on line %d in '%s' file.", tokens[0u], chromosome.get_value(), line_number, hap_file_name);
+			}
+
+			if (all_n_markers >= current_heap_size) {
+				reallocate();
+			}
+
+			/* tokens[1] -- rsId. Copy it. */
+			all_markers[all_n_markers] = (char*)malloc((strlen(tokens[1u]) + 1u) * sizeof(char));
+			if (all_markers[all_n_markers] == NULL) {
+				throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
+			}
+			strcpy(all_markers[all_n_markers], tokens[1u]);
+
+			/* tokens[2] -- position. parse to unsigned long integer */
+			if (!auxiliary::to_ulong_int(tokens[2u], &(all_positions[all_n_markers]))) {
+				throw Exception(__FILE__, __LINE__, "The chromosomal position '%s' on line %d in '%s' file could not be parsed to unsigned integer.", tokens[2u], line_number, hap_file_name);
+			}
+
+			if ((all_n_markers > 0) && (all_positions[all_n_markers - 1u] > all_positions[all_n_markers])) {
+				throw Exception(__FILE__, __LINE__, "The chromosomal positions in '%s' file are not in ascending order.", hap_file_name);
+			}
+
+			if ((all_positions[all_n_markers] >= start_position) && (all_positions[all_n_markers] <= end_position)) {
+				/* tokens[3] -- first allele, if more than one letter, then indel -- skip. Otherwise check if in {A,C,G,T}. */
+				if ((length = strlen(tokens[3u])) < 1u) {
+					throw Exception(__FILE__, __LINE__, "The reference allele value on line %d in '%s' file is empty.", line_number, hap_file_name);
+				} else if (length == 1u) {
+					all_major_alleles[all_n_markers] = toupper(tokens[3u][0u]);
+					if ((all_major_alleles[all_n_markers] != 'A') && (all_major_alleles[all_n_markers] != 'C') &&
+							(all_major_alleles[all_n_markers] != 'G') && (all_major_alleles[all_n_markers] != 'T')) {
+						throw Exception(__FILE__, __LINE__, "The first allele value '%s' on line %d in '%s' file is incorrect.", tokens[3u], line_number, hap_file_name);
+					}
+				} else {
+					/* indel, deletion and etc. */
+					continue;
+				}
+
+				/* tokens[4] -- second allele, if more than one value, then skip. if one value and more than one letter -- skip. Otherwise check if in {A,C,G,T} */
+				if ((length = strlen(tokens[4u])) < 1u) {
+					throw Exception(__FILE__, __LINE__, "The alternate allele value on line %d in '%s' file is empty.", line_number, hap_file_name);
+				} else if (length == 1u) {
+					all_minor_alleles[all_n_markers] = toupper(tokens[4u][0u]);
+					if ((all_minor_alleles[all_n_markers] != 'A') && (all_minor_alleles[all_n_markers] != 'C') &&
+							(all_minor_alleles[all_n_markers] != 'G') && (all_minor_alleles[all_n_markers] != 'T')) {
+						throw Exception(__FILE__, __LINE__, "The second allele value '%s' on line %d in '%s' file is incorrect.", tokens[4u], line_number, hap_file_name);
+					}
+				} else {
+					/* multi-allelic SNP or indel, deletion and etc. */
+					continue;
+				}
+
+				/* tokens[i] with i = IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE,...,N are samples */
+				all_haplotypes[all_n_markers] = (char*)malloc(n_haplotypes * sizeof(char));
+				if (all_haplotypes[all_n_markers] == NULL) {
+					throw Exception(__FILE__, __LINE__, "Error in memory allocation");
+				}
+
+				n_first_allele = 0u;
+				n_second_allele = 0u;
+
+				for (unsigned int i = IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE; i < total_column_number; ++i) {
+					if (strlen(tokens[i]) != 1u) {
+						throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d in '%s' file is incorrect.", tokens[i], line_number, hap_file_name);
+					}
+
+					if (tokens[i][0u] == '0') {
+						++n_first_allele;
+						all_haplotypes[all_n_markers][i - IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE] = all_major_alleles[all_n_markers];
+					} else if (tokens[i][0u] == '1') {
+						++n_second_allele;
+						all_haplotypes[all_n_markers][i - IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE] = all_minor_alleles[all_n_markers];
+					} else {
+						throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d in '%s' file is incorrect.", tokens[i], line_number, hap_file_name);
+					}
+				}
+
+				/* Save major allele frequency. Swap. First allele in alleles array must be major. */
+				if (n_first_allele < n_second_allele) {
+					swap_allele = all_major_alleles[all_n_markers];
+					all_major_alleles[all_n_markers] = all_minor_alleles[all_n_markers];
+					all_minor_alleles[all_n_markers] = swap_allele;
+					all_major_allele_freqs[all_n_markers] = ((double)n_second_allele) / ((double)(n_first_allele + n_second_allele));
+				} else {
+					all_major_allele_freqs[all_n_markers] = ((double)n_first_allele) / ((double)(n_first_allele + n_second_allele));
+				}
+
+				++all_n_markers;
+			}
+		}
+
+		if (line_length == 0) {
+			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, hap_file_name);
+		}
+
+		reader->close();
+		delete reader;
+
+		free(tokens);
+		tokens = NULL;
+	} catch (Exception &e) {
+		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", hap_file_name);
+		throw;
+	}
+}
+
+void Db::load_impute2() throw (Exception) {
+	Reader* reader = NULL;
+
+	char* line = NULL;
+	int line_length = 0;
+	unsigned int line_number = 0u;
+
+	char* token = NULL;
+	char** tokens = NULL;
+
+	unsigned int total_column_number = 0u;
+	unsigned int column_number = 0u;
+
+	Unique chromosome;
+	unsigned int length = 0u;
+
+	unsigned int n_first_allele = 0u;
+	unsigned int n_second_allele = 0u;
+	char swap_allele = '\0';
+
+	try {
+		reader = ReaderFactory::create(hap_file_name);
+		reader->open();
+
+		/* Read the first line to determine number of individuals. */
+		if ((line_length = reader->read_line()) > 0) {
+			++line_number;
+			line = *(reader->line);
+			total_column_number = 0u;
+			while ((token = auxiliary::strtok(&line, IMPUTE2_HAP_FIELD_SEPARATOR)) != NULL) {
+				++total_column_number;
+			}
+		}
+
+		if (line_length == 0) {
+			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, hap_file_name);
+		}
+
+		if (total_column_number <= IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE) {
+			throw Exception(__FILE__, __LINE__, "The number of columns (%d) on line %d in '%s' file is not equal to the expected (%d).", total_column_number, line_number, hap_file_name, IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE);
+		}
+
+		n_haplotypes = total_column_number - IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE;
+
+		/* Load data. */
+		reader->reset();
+
+		tokens = (char**)malloc(total_column_number * sizeof(char*));
+		if (tokens == NULL) {
+			throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
+		}
+
+		while ((line_length = reader->read_line()) > 0) {
+			++line_number;
+			line = *(reader->line);
+			column_number = 0u;
+
+			while ((token = auxiliary::strtok(&line, IMPUTE2_HAP_FIELD_SEPARATOR)) != NULL) {
+				if (column_number < total_column_number) {
+					tokens[column_number] = token;
+				}
+				++column_number;
+			}
+
+			if (column_number != total_column_number) {
+				throw Exception(__FILE__, __LINE__, "The number of columns (%d) on line %d in '%s' file is not equal to the expected (%d).", column_number, line_number, hap_file_name, total_column_number);
+			}
+
+			/* tokens[0] -- chromosome. check if unique across all IMPUTE2 file. must be one file per chromosome. */
+			if (!(chromosome.*chromosome.check)(tokens[0u])) {
+				throw Exception(__FILE__, __LINE__, "Unexpected chromosome '%s' (expected chromosome is '%s') was found on line %d in '%s' file.", tokens[0u], chromosome.get_value(), line_number, hap_file_name);
+			}
+
+			if (all_n_markers >= current_heap_size) {
+				reallocate();
+			}
+
+			/* tokens[1] -- rsId. Copy it. */
+			all_markers[all_n_markers] = (char*)malloc((strlen(tokens[1u]) + 1u) * sizeof(char));
+			if (all_markers[all_n_markers] == NULL) {
+				throw Exception(__FILE__, __LINE__, "Error in memory allocation.");
+			}
+			strcpy(all_markers[all_n_markers], tokens[1u]);
+
+			/* tokens[2] -- position. parse to unsigned long integer */
+			if (!auxiliary::to_ulong_int(tokens[2u], &(all_positions[all_n_markers]))) {
+				throw Exception(__FILE__, __LINE__, "The chromosomal position '%s' on line %d in '%s' file could not be parsed to unsigned integer.", tokens[2u], line_number, hap_file_name);
+			}
+
+			if ((all_n_markers > 0) && (all_positions[all_n_markers - 1u] > all_positions[all_n_markers])) {
+				throw Exception(__FILE__, __LINE__, "The chromosomal positions in '%s' file are not in ascending order.", hap_file_name);
+			}
+
+			/* tokens[3] -- first allele, if more than one letter, then indel -- skip. Otherwise check if in {A,C,G,T}. */
+			if ((length = strlen(tokens[3u])) < 1u) {
+				throw Exception(__FILE__, __LINE__, "The reference allele value on line %d in '%s' file is empty.", line_number, hap_file_name);
+			} else if (length == 1u) {
+				all_major_alleles[all_n_markers] = toupper(tokens[3u][0u]);
+				if ((all_major_alleles[all_n_markers] != 'A') && (all_major_alleles[all_n_markers] != 'C') &&
+						(all_major_alleles[all_n_markers] != 'G') && (all_major_alleles[all_n_markers] != 'T')) {
+					throw Exception(__FILE__, __LINE__, "The first allele value '%s' on line %d in '%s' file is incorrect.", tokens[3u], line_number, hap_file_name);
+				}
+			} else {
+				/* indel, deletion and etc. */
+				continue;
+			}
+
+			/* tokens[4] -- second allele, if more than one value, then skip. if one value and more than one letter -- skip. Otherwise check if in {A,C,G,T} */
+			if ((length = strlen(tokens[4u])) < 1u) {
+				throw Exception(__FILE__, __LINE__, "The alternate allele value on line %d in '%s' file is empty.", line_number, hap_file_name);
+			} else if (length == 1u) {
+				all_minor_alleles[all_n_markers] = toupper(tokens[4u][0u]);
+				if ((all_minor_alleles[all_n_markers] != 'A') && (all_minor_alleles[all_n_markers] != 'C') &&
+						(all_minor_alleles[all_n_markers] != 'G') && (all_minor_alleles[all_n_markers] != 'T')) {
+					throw Exception(__FILE__, __LINE__, "The second allele value '%s' on line %d in '%s' file is incorrect.", tokens[4u], line_number, hap_file_name);
+				}
+			} else {
+				/* multi-allelic SNP or indel, deletion and etc. */
+				continue;
+			}
+
+			/* tokens[i] with i = IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE,...,N are samples */
+			all_haplotypes[all_n_markers] = (char*)malloc(n_haplotypes * sizeof(char));
+			if (all_haplotypes[all_n_markers] == NULL) {
+				throw Exception(__FILE__, __LINE__, "Error in memory allocation");
+			}
+
+			n_first_allele = 0u;
+			n_second_allele = 0u;
+
+			for (unsigned int i = IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE; i < total_column_number; ++i) {
+				if (strlen(tokens[i]) != 1u) {
+					throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d in '%s' file is incorrect.", tokens[i], line_number, hap_file_name);
+				}
+
+				if (tokens[i][0u] == '0') {
+					++n_first_allele;
+					all_haplotypes[all_n_markers][i - IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE] = all_major_alleles[all_n_markers];
+				} else if (tokens[i][0u] == '1') {
+					++n_second_allele;
+					all_haplotypes[all_n_markers][i - IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE] = all_minor_alleles[all_n_markers];
+				} else {
+					throw Exception(__FILE__, __LINE__, "The allele value '%s' on line %d in '%s' file is incorrect.", tokens[i], line_number, hap_file_name);
+				}
+			}
+
+			/* Save major allele frequency. Swap. First allele in alleles array must be major. */
+			if (n_first_allele < n_second_allele) {
+				swap_allele = all_major_alleles[all_n_markers];
+				all_major_alleles[all_n_markers] = all_minor_alleles[all_n_markers];
+				all_minor_alleles[all_n_markers] = swap_allele;
+				all_major_allele_freqs[all_n_markers] = ((double)n_second_allele) / ((double)(n_first_allele + n_second_allele));
+			} else {
+				all_major_allele_freqs[all_n_markers] = ((double)n_first_allele) / ((double)(n_first_allele + n_second_allele));
+			}
+
+			++all_n_markers;
+		}
+
+		if (line_length == 0) {
+			throw Exception(__FILE__, __LINE__, "The line %d in '%s' file is empty.", line_number + 1u, hap_file_name);
+		}
+
+		reader->close();
+		delete reader;
+
+		free(tokens);
+		tokens = NULL;
 	} catch (Exception &e) {
 		e.add_message(__FILE__, __LINE__, "Error while loading '%s' file.", hap_file_name);
 		throw;

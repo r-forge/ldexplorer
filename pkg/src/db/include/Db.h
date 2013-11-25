@@ -60,6 +60,9 @@ private:
 	static const unsigned int HAPMAP2_MAP_MANDATORY_COLUMNS_SIZE;
 	static const char* hapmap2_map_mandatory_columns[];
 
+	static const char IMPUTE2_HAP_FIELD_SEPARATOR;
+	static const unsigned int IMPUTE2_HAP_MANDATORY_COLUMNS_SIZE;
+
 	const char* hap_file_name;
 	const char* map_file_name;
 
@@ -83,6 +86,9 @@ private:
 	void load_hapmap2(unsigned long int start_position, unsigned long int end_position) throw (Exception);
 	void load_hapmap2() throw (Exception);
 
+	void load_impute2(unsigned long int start_position, unsigned long int end_position) throw (Exception);
+	void load_impute2() throw (Exception);
+
 	void free_markers(unsigned int heap_size);
 	void free_positions(unsigned int heap_size);
 	void free_alleles(unsigned int heap_size);
@@ -99,6 +105,7 @@ public:
 
 	static const char* VCF;
 	static const char* HAPMAP2;
+	static const char* IMPUTE2;
 
 	Db() throw (Exception);
 	virtual ~Db();
